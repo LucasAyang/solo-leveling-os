@@ -44,6 +44,49 @@
             opacity: 0.3;
         }
 
+        /* Tela de Despertar / Login (Solo Leveling Notification) */
+        .awakening-window {
+            background: linear-gradient(180deg, rgba(6, 18, 32, 0.96) 0%, rgba(3, 8, 16, 0.98) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.7);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.3), inset 0 0 30px rgba(0, 212, 255, 0.12);
+            position: relative;
+        }
+
+        .awakening-window::before,
+        .awakening-window::after {
+            content: '';
+            position: absolute;
+            left: -6px;
+            right: -6px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--sys-blue), #fff, var(--sys-blue), transparent);
+            box-shadow: 0 0 12px var(--sys-blue);
+        }
+        .awakening-window::before { top: -1px; }
+        .awakening-window::after { bottom: -1px; }
+
+        .awakening-btn {
+            border: 1px solid rgba(0, 212, 255, 0.6);
+            background: rgba(0, 20, 40, 0.5);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.15), inset 0 0 10px rgba(0, 212, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+        .awakening-btn:hover {
+            background: rgba(0, 212, 255, 0.25);
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), inset 0 0 15px rgba(0, 212, 255, 0.3);
+            transform: scale(1.04);
+        }
+
+        .system-boot-out {
+            animation: bootOut 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes bootOut {
+            0% { opacity: 1; transform: scale(1); filter: brightness(1); }
+            40% { opacity: 1; transform: scale(1.04, 0.02); filter: brightness(3); }
+            100% { opacity: 0; transform: scale(0, 0); filter: brightness(5); }
+        }
+
         /* Checkbox Customizado */
         .quest-checkbox {
             appearance: none;
@@ -81,10 +124,10 @@
         }
 
         /* Efeitos de texto */
-        .text-glow { text-shadow: 0 0 5px rgba(0, 212, 255, 0.8); }
+        .text-glow { text-shadow: 0 0 8px rgba(0, 212, 255, 0.85); }
         .text-glow-purple { color: var(--sys-purple); text-shadow: 0 0 8px rgba(179, 136, 255, 0.8); }
         .text-glow-gold { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
-        .text-glow-red { color: #ff3333; text-shadow: 0 0 10px rgba(255, 51, 51, 0.8); }
+        .text-glow-red { color: #ff2a2a; text-shadow: 0 0 10px rgba(255, 42, 42, 0.9); }
         .text-glow-god { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 0 30px rgba(0, 255, 255, 0.8); }
 
         .blink { animation: blinker 1.5s linear infinite; }
@@ -138,7 +181,7 @@
         }
 
         .glitch-fx {
-            animation: glitch 0.3s linear infinite alternate;
+            animation: glitch 0.25s linear infinite alternate;
         }
 
         /* Animações Toast (Notificações) */
@@ -171,8 +214,8 @@
         }
 
         @keyframes glitch {
-            0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(1px, 1px); }
-            100% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; transform: translate(-1px, -1px); }
+            0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(2px, 1px); }
+            100% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; transform: translate(-2px, -1px); }
         }
 
         /* Inventário Slots */
@@ -198,6 +241,42 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col p-2 md:p-4 gap-4">
+
+    <!-- TELA INICIAL DE DESPERTAR / LOGIN (NOTIFICATION) -->
+    <div id="awakening-screen" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#02050a] bg-opacity-95 backdrop-blur-xl p-4 select-none">
+        <div id="awakening-box" class="awakening-window max-w-lg w-full p-6 md:p-10 flex flex-col items-center text-center animate-[popIn_0.5s_ease-out]">
+            
+            <!-- Header: [!] [NOTIFICATION] -->
+            <div class="flex items-center justify-center gap-3 w-full mb-8">
+                <div class="w-12 h-12 border border-cyan-400 flex items-center justify-center shadow-[0_0_12px_rgba(0,212,255,0.4),inset_0_0_10px_rgba(0,212,255,0.2)]">
+                    <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-xl text-glow">!</div>
+                </div>
+                <div class="border border-cyan-400 px-6 md:px-10 py-2 shadow-[0_0_12px_rgba(0,212,255,0.4),inset_0_0_10px_rgba(0,212,255,0.2)]">
+                    <h2 class="text-2xl md:text-3xl font-bold tracking-[0.25em] text-white text-glow uppercase">NOTIFICATION</h2>
+                </div>
+            </div>
+
+            <!-- Mensagem Central -->
+            <div class="space-y-3 text-lg md:text-xl text-cyan-100 tracking-wide font-medium mb-10 text-left md:text-center leading-relaxed">
+                <p>Your heart will stop in <span id="awakening-timer" class="text-glow-red font-bold">0.02 seconds</span></p>
+                <p>if you choose not to accept.</p>
+                <p class="pt-2 text-white text-glow font-semibold">Will you accept?</p>
+                <p id="awakening-warning" class="hidden text-xs text-red-400 uppercase tracking-widest pt-2 blink font-bold">
+                    [ ERRO: O JOGADOR NÃO PODE RECUSAR O CONVITE DO SISTEMA ]
+                </p>
+            </div>
+
+            <!-- Botões: Yes / No -->
+            <div class="flex items-center justify-center gap-8 md:gap-14 w-full">
+                <button onclick="acceptAwakening()" class="awakening-btn px-8 py-2.5 text-xl font-bold text-white tracking-widest uppercase min-w-[110px] text-glow">
+                    Yes
+                </button>
+                <button id="awakening-no-btn" onclick="rejectAwakening()" class="awakening-btn px-8 py-2.5 text-xl font-bold text-gray-300 tracking-widest uppercase min-w-[110px]">
+                    No
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- System Notifications Container (Popups) -->
     <div id="system-notification-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none w-72 md:w-80"></div>
@@ -456,7 +535,7 @@
     </main>
 
     <footer class="text-center text-[10px] text-blue-900 opacity-60 mt-2">
-        System Integration Status: Notion Cloud Sync + Local Cache | Solo Leveling OS v4.0
+        System Integration Status: Notion Cloud Sync + Local Cache | Solo Leveling OS v4.2
     </footer>
 
     <script>
@@ -467,11 +546,71 @@
          */
         const WEBHOOK_URL = 'https://hook.us2.make.com/u7qxqhn3jr8fgah4h9y5rh8zjzwtx4hw';
         const STORAGE_KEY = 'soloLevelingOS_Save_v4';
+        const AWAKENING_SESSION_KEY = 'soloLevelingOS_Awakened_Session';
 
         const CONFIG_IMAGENS = {
             personagem: "", // URL da imagem do personagem
             equipamentos: { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" }
         };
+
+        /**
+         * ==========================================
+         * TELA DE LOGIN / DESPERTAR DO SISTEMA
+         * ==========================================
+         */
+        function checkAwakeningScreen() {
+            const screen = document.getElementById('awakening-screen');
+            if (!screen) return;
+            if (sessionStorage.getItem(AWAKENING_SESSION_KEY) === 'true') {
+                screen.classList.add('hidden');
+            }
+        }
+
+        function acceptAwakening() {
+            const screen = document.getElementById('awakening-screen');
+            const box = document.getElementById('awakening-box');
+            sessionStorage.setItem(AWAKENING_SESSION_KEY, 'true');
+            
+            box.classList.add('system-boot-out');
+            setTimeout(() => {
+                screen.classList.add('hidden');
+                box.classList.remove('system-boot-out');
+                showSystemNotification('Bem-vindo, Jogador Lucas. O Sistema foi inicializado.', 'success');
+            }, 420);
+        }
+
+        function rejectAwakening() {
+            const box = document.getElementById('awakening-box');
+            const warning = document.getElementById('awakening-warning');
+            const timer = document.getElementById('awakening-timer');
+            const noBtn = document.getElementById('awakening-no-btn');
+
+            box.classList.add('glitch-fx');
+            warning.classList.remove('hidden');
+            timer.innerText = "0.01 seconds";
+            noBtn.innerText = "Yes";
+            noBtn.onclick = acceptAwakening;
+            noBtn.classList.add('text-glow', 'text-white');
+
+            setTimeout(() => {
+                box.classList.remove('glitch-fx');
+            }, 600);
+        }
+
+        function triggerAwakeningScreenManual() {
+            sessionStorage.removeItem(AWAKENING_SESSION_KEY);
+            const screen = document.getElementById('awakening-screen');
+            const warning = document.getElementById('awakening-warning');
+            const timer = document.getElementById('awakening-timer');
+            const noBtn = document.getElementById('awakening-no-btn');
+
+            warning.classList.add('hidden');
+            timer.innerText = "0.02 seconds";
+            noBtn.innerText = "No";
+            noBtn.onclick = rejectAwakening;
+            noBtn.classList.remove('text-glow', 'text-white');
+            screen.classList.remove('hidden');
+        }
 
         /**
          * ==========================================
@@ -488,8 +627,9 @@
         };
 
         let categoryTallies = {
-            'saude': 0, 'estudar': 0, 'pdi': 0, 'casa': 0, 
-            'roupas': 0, 'vicio': 0, 'familia': 0, 'financeiro': 0
+            'saude': 0, 'estudo': 0, 'trabalho': 0, 'casa': 0, 
+            'roupa': 0, 'lazer': 0, 'vicio': 0, 'familia': 0, 
+            'amigos': 0, 'financeiro': 0
         };
 
         let resetTimestamps = {
@@ -503,26 +643,30 @@
         const evolutionLevels = [5, 20, 50, 80, 100];
         const classEvolutions = {
             'saude': { 5: 'Guerreiro', 20: 'Cavaleiro', 50: 'Comandante', 80: 'Mestre de Armas', 100: 'Deus da Guerra' },
-            'estudar': { 5: 'Estudioso', 20: 'Mago', 50: 'Sábio', 80: 'Arquimago', 100: 'Onisciente' },
-            'pdi': { 5: 'Tecnomante', 20: 'Engenheiro', 50: 'Arquiteto de Sistemas', 80: 'Cyber Lord', 100: 'Hack' },
-            'financeiro': { 5: 'Mercador', 20: 'Barão', 50: 'Magnata', 80: 'Soberano Econômico', 100: 'Rei de Ouro' },
-            'familia': { 5: 'Protetor', 20: 'Guardião', 50: 'Paladino Divino', 80: 'Guardião Astral', 100: 'Aegis Divino' },
+            'estudo': { 5: 'Estudioso', 20: 'Mago', 50: 'Sábio', 80: 'Arquimago', 100: 'Onisciente' },
+            'trabalho': { 5: 'Tecnomante', 20: 'Engenheiro', 50: 'Arquiteto de Sistemas', 80: 'Cyber Lord', 100: 'Hack' },
             'casa': { 5: 'Construtor', 20: 'Lorde do Domínio', 50: 'Soberano', 80: 'Arquiteto de Mundos', 100: 'Criador' },
+            'roupa': { 5: 'Explorador', 20: 'Aristocrata', 50: 'Lorde do Estilo', 80: 'Doutrinador', 100: 'Imperador' },
+            'lazer': { 5: 'Aventureiro', 20: 'Bardo', 50: 'Mestre do Horizonte', 80: 'Andarilho Dimensional', 100: 'Viajante Astral' },
             'vicio': { 5: 'Monge', 20: 'Ascendente', 50: 'Iluminado', 80: 'Eremita Supremo', 100: 'Mestre da Mente' },
-            'roupas': { 5: 'Explorador', 20: 'Aristocrata', 50: 'Lorde do Estilo', 80: 'Doutrinador', 100: 'Imperador' }
+            'familia': { 5: 'Protetor', 20: 'Guardião', 50: 'Paladino Divino', 80: 'Guardião Astral', 100: 'Aegis Divino' },
+            'amigos': { 5: 'Carismático', 20: 'Emissário', 50: 'Líder de Guilda', 80: 'Comandante Supremo', 100: 'Monarca Soberano' },
+            'financeiro': { 5: 'Mercador', 20: 'Barão', 50: 'Magnata', 80: 'Soberano Econômico', 100: 'Rei de Ouro' }
         };
 
         let activeCategoryId = 'saude';
 
-        // Listas iniciam vazias para receber os dados do Notion (ou do Cache Local)
+        // Categorias alinhadas 100% com o Notion
         const categories = {
             'saude': { title: 'Saúde', icon: '⚕️', type: 'category', tasks: [], boxClaimed: false },
-            'estudar': { title: 'Estudar', icon: '📚', type: 'category', tasks: [], boxClaimed: false },
-            'pdi': { title: 'PDI do Trabalho', icon: '💼', type: 'category', tasks: [], boxClaimed: false },
-            'casa': { title: 'Mobiliar a Casa', icon: '🏠', type: 'category', tasks: [], boxClaimed: false },
-            'roupas': { title: 'Comprar Roupas', icon: '👕', type: 'category', tasks: [], boxClaimed: false },
-            'vicio': { title: 'Controle de Vício', icon: '🎮', type: 'category', tasks: [], boxClaimed: false },
+            'estudo': { title: 'Estudo', icon: '📚', type: 'category', tasks: [], boxClaimed: false },
+            'trabalho': { title: 'Trabalho', icon: '💼', type: 'category', tasks: [], boxClaimed: false },
+            'casa': { title: 'Casa', icon: '🏠', type: 'category', tasks: [], boxClaimed: false },
+            'roupa': { title: 'Roupa', icon: '👕', type: 'category', tasks: [], boxClaimed: false },
+            'lazer': { title: 'Lazer', icon: '🎯', type: 'category', tasks: [], boxClaimed: false },
+            'vicio': { title: 'Vício', icon: '🎮', type: 'category', tasks: [], boxClaimed: false },
             'familia': { title: 'Família', icon: '❤️', type: 'category', tasks: [], boxClaimed: false },
+            'amigos': { title: 'Amigos', icon: '🤝', type: 'category', tasks: [], boxClaimed: false },
             'financeiro': { title: 'Financeiro', icon: '💰', type: 'category', tasks: [], boxClaimed: false },
             'admin': { title: 'Administração', icon: '⚙️', isSystem: true },
             'inventario': { title: 'Inventário', icon: '🎒', isSystem: true }
@@ -591,9 +735,29 @@
          * INTEGRAÇÃO NOTION VIA MAKE.COM (BIDIRECIONAL)
          * ==========================================
          */
-        // Remove acentos para facilitar o mapeamento entre o Notion e os IDs do código
         function normalizeStr(str) {
             return (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        }
+
+        function matchCategoryKey(rawCategoryName) {
+            const normCat = normalizeStr(rawCategoryName);
+            if (!normCat) return 'saude';
+
+            // Mapeamento direto ou por sinônimos antigos
+            if (normCat.includes('saude')) return 'saude';
+            if (normCat.includes('estud')) return 'estudo';
+            if (normCat.includes('trabalh') || normCat.includes('pdi')) return 'trabalho';
+            if (normCat.includes('casa') || normCat.includes('mobilia')) return 'casa';
+            if (normCat.includes('roupa')) return 'roupa';
+            if (normCat.includes('lazer')) return 'lazer';
+            if (normCat.includes('vicio')) return 'vicio';
+            if (normCat.includes('familia')) return 'familia';
+            if (normCat.includes('amigo')) return 'amigos';
+            if (normCat.includes('financ')) return 'financeiro';
+
+            return Object.keys(categories).find(k => 
+                !categories[k].isSystem && normalizeStr(categories[k].title) === normCat
+            ) || 'saude';
         }
 
         async function carregarMissoesDoNotion(isManual = false) {
@@ -608,48 +772,67 @@
                 if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
                 const rawText = await response.text();
-                // Caso o Make ainda não tenha o módulo "Webhook Response" configurado, ele devolve "Accepted"
                 if (rawText === "Accepted" || !rawText.trim()) {
                     setSyncStatus('offline');
-                    if (isManual) showSystemNotification('O Make recebeu o pedido, mas falta configurar o módulo "Webhook Response" para devolver o JSON.', 'error');
+                    if (isManual) showSystemNotification('Falta o módulo Webhook Response no Make.', 'error');
                     return;
                 }
 
-                const data = JSON.parse(rawText);
-                const items = Array.isArray(data) ? data : (data.results || data.items || data.data || []);
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (parseErr) {
+                    throw new Error("Resposta do Make não é um JSON válido.");
+                }
+                
+                let items = [];
+                if (Array.isArray(data)) {
+                    items = data;
+                } else if (data && typeof data === 'object') {
+                    const possibleArray = data.results || data.items || data.data || data.array || data.missoes;
+                    if (Array.isArray(possibleArray)) {
+                        items = possibleArray;
+                    } else {
+                        items = [data];
+                    }
+                }
 
-                // Limpa as listas atuais para preencher com as do Notion
+                // Limpa todas as listas atuais antes de popular com os dados vindos do Notion
                 Object.keys(categories).forEach(k => { if (!categories[k].isSystem) categories[k].tasks = []; });
                 Object.keys(periodicQuests).forEach(k => { periodicQuests[k].list = []; });
 
                 items.forEach(item => {
+                    if (!item || typeof item !== 'object') return;
+
                     let id, text, categoria, tipo, xp, done;
 
-                    // Suporte Automático 1: Formato Bruto da API do Notion (Search Objects)
+                    // Formato 1: Objeto Bruto da API do Notion
                     if (item.properties) {
                         const p = item.properties;
                         id = item.id;
-                        text = p.Quest?.title?.[0]?.plain_text || p.Name?.title?.[0]?.plain_text || 'Missão Sem Título';
+                        text = p.Quest?.title?.[0]?.plain_text || p.Name?.title?.[0]?.plain_text || '';
                         categoria = p.Categoria?.select?.name || 'Saúde';
                         tipo = p.Tipo?.select?.name || 'Main Quest';
                         xp = p.XP?.number ?? 20;
                         done = p['Concluída']?.checkbox ?? p.Concluida?.checkbox ?? false;
                     } 
-                    // Suporte Automático 2: Formato JSON Simplificado (caso você formate no Make)
+                    // Formato 2: JSON estruturado pelo Make
                     else {
-                        id = item.id || ('notion_' + Math.random().toString(36).substr(2, 9));
-                        text = item.quest || item.text || item.title || 'Missão';
-                        categoria = item.categoria || 'Saúde';
-                        tipo = item.tipo || 'Main Quest';
-                        xp = parseInt(item.xp) || 20;
-                        done = Boolean(item.concluida || item.done);
+                        id = item.id || item.ID || ('notion_' + Math.random().toString(36).substr(2, 9));
+                        text = item.quest || item.Quest || item.text || item.title || '';
+                        categoria = item.categoria || item.Categoria || 'Saúde';
+                        tipo = item.tipo || item.Tipo || 'Main Quest';
+                        xp = parseInt(item.xp ?? item.Xp ?? item.XP) || 20;
+                        const rawDone = item.concluida ?? item.Concluida ?? item['Concluída'] ?? item.done;
+                        done = rawDone === true || rawDone === 'true';
                     }
 
-                    const taskObj = { id, text, xp, done };
-                    const normTipo = normalizeStr(tipo);
-                    const normCat = normalizeStr(categoria);
+                    // Ignora linhas em branco do Notion
+                    if (!text || String(text).trim() === '') return;
 
-                    // Roteamento para Listas Periódicas ou Categorias Principais
+                    const taskObj = { id, text: String(text).trim(), xp, done };
+                    const normTipo = normalizeStr(tipo);
+
                     if (normTipo.includes('daily') || normTipo.includes('diaria')) {
                         periodicQuests.daily.list.push(taskObj);
                     } else if (normTipo.includes('weekly') || normTipo.includes('semanal')) {
@@ -659,17 +842,25 @@
                     } else if (normTipo.includes('yearly') || normTipo.includes('anual')) {
                         periodicQuests.yearly.list.push(taskObj);
                     } else {
-                        // Procura a categoria correspondente
-                        let matchedCatId = Object.keys(categories).find(k => 
-                            !categories[k].isSystem && 
-                            (normalizeStr(categories[k].title) === normCat || normCat.includes(k))
-                        ) || 'saude';
-                        
+                        const matchedCatId = matchCategoryKey(categoria);
                         categories[matchedCatId].tasks.push(taskObj);
                     }
                 });
 
+                // Libera a Lootbox caso existam tarefas pendentes na lista
+                ['daily', 'weekly', 'monthly', 'yearly'].forEach(type => {
+                    if (periodicQuests[type].list.some(t => !t.done)) {
+                        periodicQuests[type].boxClaimed = false;
+                    }
+                });
+                Object.keys(categories).forEach(k => {
+                    if (!categories[k].isSystem && categories[k].tasks.some(t => !t.done)) {
+                        categories[k].boxClaimed = false;
+                    }
+                });
+
                 saveGameState();
+                renderTabs();
                 renderCategory(activeCategoryId);
                 renderPeriodicQuests();
                 setSyncStatus('online');
@@ -678,7 +869,7 @@
             } catch (error) {
                 console.warn("Operando com cache local. Detalhe:", error);
                 setSyncStatus('offline');
-                if (isManual) showSystemNotification('Falha ao buscar do Notion. Usando dados salvos localmente.', 'error');
+                if (isManual) showSystemNotification('Falha ao buscar do Notion. Usando cache local.', 'error');
             }
         }
 
@@ -700,6 +891,8 @@
 
                 if (!response.ok) throw new Error('Erro na resposta do Webhook');
                 setSyncStatus('online');
+                
+                setTimeout(() => carregarMissoesDoNotion(false), 1500);
                 return true;
             } catch (error) {
                 console.error('Erro ao enviar missão para o Notion:', error);
@@ -758,14 +951,21 @@
             try {
                 const parsed = JSON.parse(saved);
                 if (parsed.player) player = { ...player, ...parsed.player };
-                if (parsed.categoryTallies) categoryTallies = { ...categoryTallies, ...parsed.categoryTallies };
+                if (parsed.categoryTallies) {
+                    // Migração suave de chaves antigas (estudar -> estudo, pdi -> trabalho, roupas -> roupa)
+                    if (parsed.categoryTallies.estudar && !parsed.categoryTallies.estudo) parsed.categoryTallies.estudo = parsed.categoryTallies.estudar;
+                    if (parsed.categoryTallies.pdi && !parsed.categoryTallies.trabalho) parsed.categoryTallies.trabalho = parsed.categoryTallies.pdi;
+                    if (parsed.categoryTallies.roupas && !parsed.categoryTallies.roupa) parsed.categoryTallies.roupa = parsed.categoryTallies.roupas;
+                    categoryTallies = { ...categoryTallies, ...parsed.categoryTallies };
+                }
                 if (parsed.resetTimestamps) resetTimestamps = { ...resetTimestamps, ...parsed.resetTimestamps };
 
                 if (parsed.categoriesData) {
                     Object.keys(parsed.categoriesData).forEach(k => {
-                        if (categories[k]) {
-                            categories[k].tasks = parsed.categoriesData[k].tasks || [];
-                            categories[k].boxClaimed = Boolean(parsed.categoriesData[k].boxClaimed);
+                        const targetKey = matchCategoryKey(k);
+                        if (categories[targetKey]) {
+                            categories[targetKey].tasks = (parsed.categoriesData[k].tasks || []).filter(t => t && t.text && t.text !== 'Missão');
+                            categories[targetKey].boxClaimed = Boolean(parsed.categoriesData[k].boxClaimed);
                         }
                     });
                 }
@@ -773,7 +973,7 @@
                 if (parsed.periodicData) {
                     Object.keys(parsed.periodicData).forEach(k => {
                         if (periodicQuests[k]) {
-                            periodicQuests[k].list = parsed.periodicData[k].list || [];
+                            periodicQuests[k].list = (parsed.periodicData[k].list || []).filter(t => t && t.text && t.text !== 'Missão');
                             periodicQuests[k].boxClaimed = Boolean(parsed.periodicData[k].boxClaimed);
                         }
                     });
@@ -786,6 +986,7 @@
         function resetSaveConfirmation() {
             if (confirm("⚠️ ATENÇÃO: Deseja resetar todo o seu Nível, XP e Equipamentos para o Nível 1? (Suas missões no Notion não serão apagadas).")) {
                 localStorage.removeItem(STORAGE_KEY);
+                sessionStorage.removeItem(AWAKENING_SESSION_KEY);
                 location.reload();
             }
         }
@@ -1000,6 +1201,7 @@
         };
 
         function init() {
+            checkAwakeningScreen();
             loadGameState();
             renderTabs();
             renderCategory(activeCategoryId);
@@ -1051,6 +1253,7 @@
 
             saveGameState();
             updatePlayerUI();
+            renderTabs();
 
             if (listType === 'category') {
                 if (activeCategoryId === categoryId) renderCategory(categoryId);
@@ -1058,7 +1261,6 @@
                 renderPeriodicQuests();
             }
 
-            // Sincroniza o checkbox com o Notion em background
             atualizarStatusNoNotion(task.id, task.text, isDone);
         }
 
@@ -1077,11 +1279,14 @@
                 let maxCat = 'saude';
                 let maxVal = -1;
                 for (const cat in categoryTallies) {
-                    if (categoryTallies[cat] > maxVal) { maxVal = categoryTallies[cat]; maxCat = cat; }
+                    if (categoryTallies[cat] > maxVal && classEvolutions[cat]) { 
+                        maxVal = categoryTallies[cat]; 
+                        maxCat = cat; 
+                    }
                 }
 
                 let isBalanced = maxVal > 0 && Object.values(categoryTallies).filter(v => v >= maxVal * 0.4).length >= 4;
-                let newClass = classEvolutions[maxCat][currentEvoLevel];
+                let newClass = classEvolutions[maxCat]?.[currentEvoLevel] || player.playerClass;
 
                 if (isBalanced) {
                     if (currentEvoLevel >= 100) newClass = "Deus Absoluto";
@@ -1225,7 +1430,7 @@
                                 <div class="w-full md:w-1/2">
                                     <label class="block text-gray-400 text-xs mb-1">Destino</label>
                                     <select id="admin-task-type" class="w-full bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-2 text-blue-100 focus:outline-none focus:border-blue-400">
-                                        <optgroup label="Main Quests">
+                                        <optgroup label="Main Quests (Categorias)">
                                             ${Object.keys(categories).filter(k => !categories[k].isSystem).map(k => `<option value="cat_${k}">${categories[k].title}</option>`).join('')}
                                         </optgroup>
                                         <optgroup label="Periódicas">
@@ -1249,11 +1454,14 @@
 
                     <div class="border-t border-gray-800 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="text-xs text-gray-400">
-                            Sincronize manualmente ou resete os status do jogador em caso de testes.
+                            Sincronize manualmente, exiba a tela inicial ou resete os status do jogador.
                         </div>
-                        <div class="flex gap-2 w-full md:w-auto">
+                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
                             <button onclick="carregarMissoesDoNotion(true)" class="flex-1 md:flex-initial px-4 py-2 border border-cyan-600 text-cyan-400 hover:bg-cyan-950 rounded text-xs uppercase font-bold transition-all">
                                 🔄 Puxar do Notion
+                            </button>
+                            <button onclick="triggerAwakeningScreenManual()" class="flex-1 md:flex-initial px-4 py-2 border border-purple-600 text-purple-400 hover:bg-purple-950 rounded text-xs uppercase font-bold transition-all">
+                                ⚡ Tela Inicial
                             </button>
                             <button onclick="resetSaveConfirmation()" class="flex-1 md:flex-initial px-4 py-2 border border-red-800 text-red-500 hover:bg-red-950 rounded text-xs uppercase font-bold transition-all">
                                 ⚠️ Resetar Save
@@ -1280,7 +1488,7 @@
             const typeVal = typeInput.value;
             const newTask = { id: 'local_' + Date.now(), text, xp, done: false };
             
-            let categoriaNotion = "Geral";
+            let categoriaNotion = "Saúde";
             let tipoNotion = "Main Quest";
 
             if (typeVal.startsWith('cat_')) {
@@ -1291,7 +1499,7 @@
                 categories[catId].boxClaimed = false; 
             } else if (typeVal.startsWith('per_')) {
                 const perId = typeVal.replace('per_', '');
-                categoriaNotion = "Rotina"; 
+                categoriaNotion = "Saúde"; 
                 tipoNotion = perId.charAt(0).toUpperCase() + perId.slice(1);
                 periodicQuests[perId].list.push(newTask);
                 periodicQuests[perId].boxClaimed = false;
