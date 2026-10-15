@@ -25,7 +25,6 @@
             overflow-x: hidden;
         }
 
-        /* Estilo base para os painéis do sistema */
         .sys-panel {
             background: var(--sys-panel);
             backdrop-filter: blur(10px);
@@ -45,7 +44,7 @@
             opacity: 0.3;
         }
 
-        /* Tela de Despertar / Login (Solo Leveling Notification) */
+        /* Tela de Despertar / Login */
         .awakening-window {
             background: linear-gradient(180deg, rgba(6, 18, 32, 0.96) 0%, rgba(3, 8, 16, 0.98) 100%);
             border: 1px solid rgba(0, 212, 255, 0.7);
@@ -122,6 +121,11 @@
             transform: translate(-50%, -50%);
         }
 
+        .quest-checkbox:disabled {
+            cursor: not-allowed;
+            opacity: 0.75;
+        }
+
         .quest-item.completed span.task-text {
             text-decoration: line-through;
             color: #4a5568;
@@ -175,6 +179,85 @@
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
+        /* Roleta CS:GO */
+        .roulette-viewport {
+            position: relative;
+            width: 100%;
+            height: 140px;
+            background: rgba(5, 8, 15, 0.95);
+            border: 2px solid var(--sys-blue);
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.3), inset 0 0 30px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .roulette-viewport::before,
+        .roulette-viewport::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 60px;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .roulette-viewport::before {
+            left: 0;
+            background: linear-gradient(90deg, rgba(0,0,0,0.95) 0%, transparent 100%);
+        }
+        .roulette-viewport::after {
+            right: 0;
+            background: linear-gradient(-90deg, rgba(0,0,0,0.95) 0%, transparent 100%);
+        }
+
+        .roulette-center-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 3px;
+            transform: translateX(-50%);
+            background: #ffd700;
+            box-shadow: 0 0 12px #ffd700, 0 0 25px #ffae00;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        .roulette-center-line::before,
+        .roulette-center-line::after {
+            content: '▼';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd700;
+            font-size: 14px;
+            text-shadow: 0 0 8px #ffd700;
+        }
+        .roulette-center-line::before { top: -4px; }
+        .roulette-center-line::after { content: '▲'; bottom: -4px; }
+
+        .roulette-track {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            gap: 8px;
+            will-change: transform;
+        }
+
+        .roulette-card {
+            width: 112px;
+            height: 112px;
+            flex-shrink: 0;
+            background: rgba(15, 20, 32, 0.9);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            position: relative;
+        }
+
         /* Animações Lootbox */
         .loot-box-shaking {
             animation: shakeBox 0.5s ease-in-out infinite;
@@ -189,7 +272,7 @@
             animation: glitch 0.25s linear infinite alternate;
         }
 
-        /* Animações Toast (Notificações) */
+        /* Animações Toast */
         @keyframes slideInRight {
             0% { transform: translateX(100%); opacity: 0; }
             100% { transform: translateX(0); opacity: 1; }
@@ -238,7 +321,6 @@
             background: rgba(20, 20, 30, 0.8);
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
         ::-webkit-scrollbar-thumb { background: var(--sys-blue-dark); border-radius: 3px; }
@@ -247,11 +329,10 @@
 </head>
 <body class="min-h-screen flex flex-col p-2 md:p-4 gap-4">
 
-    <!-- TELA INICIAL DE DESPERTAR & AUTENTICAÇÃO (SOLO LEVELING NOTIFICATION) -->
+    <!-- TELA INICIAL DE DESPERTAR & AUTENTICAÇÃO -->
     <div id="awakening-screen" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#02050a] bg-opacity-95 backdrop-blur-xl p-4 select-none">
         <div id="awakening-box" class="awakening-window max-w-lg w-full p-6 md:p-10 flex flex-col items-center text-center animate-[popIn_0.5s_ease-out]">
             
-            <!-- Header: [!] [NOTIFICATION] -->
             <div class="flex items-center justify-center gap-3 w-full mb-6">
                 <div class="w-11 h-11 border border-cyan-400 flex items-center justify-center shadow-[0_0_12px_rgba(0,212,255,0.4),inset_0_0_10px_rgba(0,212,255,0.2)]">
                     <div class="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-lg text-glow">!</div>
@@ -282,13 +363,12 @@
                 </div>
             </div>
 
-            <!-- ETAPA 2: LOGIN / REGISTRO DE CAÇADOR (SUPABASE AUTH) -->
+            <!-- ETAPA 2: LOGIN / REGISTRO DE CAÇADOR -->
             <div id="awakening-step-auth" class="hidden w-full text-left">
                 <p class="text-center text-cyan-200 text-sm mb-4 tracking-wider uppercase">
                     Identifique-se para sincronizar seu Status com o Servidor Central
                 </p>
 
-                <!-- Alternador Login / Cadastro -->
                 <div class="flex border-b border-cyan-900 mb-5">
                     <button id="tab-auth-login" onclick="switchAuthMode('login')" class="w-1/2 py-2 text-center font-bold uppercase tracking-widest text-sm border-b-2 border-cyan-400 text-white text-glow">
                         Login
@@ -325,6 +405,22 @@
         </div>
     </div>
 
+    <!-- MODAL DE PENALIDADE (PENALTY ZONE) -->
+    <div id="penalty-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center backdrop-blur-md bg-red-950 bg-opacity-80 p-4">
+        <div class="bg-black border-2 border-red-600 shadow-[0_0_50px_rgba(255,0,0,0.6)] p-8 rounded-lg text-center max-w-md w-full flex flex-col items-center glitch-fx">
+            <div class="text-6xl mb-3">💀</div>
+            <h2 class="text-3xl font-black text-glow-red uppercase tracking-widest mb-2">ZONA DE PENALIDADE</h2>
+            <p class="text-sm text-red-200 mb-4" id="penalty-modal-desc">
+                Você falhou em completar todas as Daily Quests do ciclo anterior. O Sistema aplicou uma punição.
+            </p>
+            <div id="penalty-modal-details" class="w-full bg-red-950 bg-opacity-40 border border-red-700 rounded p-3 text-xs text-red-300 font-mono mb-6 text-left space-y-1">
+            </div>
+            <button onclick="document.getElementById('penalty-modal').classList.add('hidden')" class="px-8 py-2.5 border-2 border-red-500 text-red-300 hover:bg-red-800 hover:text-white uppercase font-bold tracking-widest rounded transition-all">
+                Aceitar Punição
+            </button>
+        </div>
+    </div>
+
     <!-- System Notifications Container (Popups) -->
     <div id="system-notification-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none w-72 md:w-80"></div>
 
@@ -345,13 +441,23 @@
         </div>
     </div>
 
-    <!-- Modal Lootbox -->
-    <div id="lootbox-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-lg bg-black bg-opacity-90">
+    <!-- Modal Lootbox (Com Roleta CS:GO) -->
+    <div id="lootbox-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-lg bg-black bg-opacity-95 p-4">
         <!-- Fase 1: Caixa Fechada -->
         <div id="lootbox-phase-1" class="text-center cursor-pointer" onclick="openLootbox()">
             <div class="text-7xl mb-4 loot-box-shaking">📦</div>
             <h2 class="text-2xl font-bold text-glow uppercase tracking-widest text-blue-400" id="lootbox-title">Daily Box Recebida</h2>
-            <p class="text-gray-400 text-sm mt-2 blink">Toque para abrir</p>
+            <p class="text-gray-400 text-sm mt-2 blink">Toque para iniciar a Roleta do Sistema</p>
+        </div>
+
+        <!-- Fase 1.5: Roleta Estilo CS:GO -->
+        <div id="lootbox-phase-roulette" class="hidden max-w-2xl w-full flex flex-col items-center">
+            <h3 class="text-lg font-bold text-cyan-300 uppercase tracking-widest mb-4 blink">Sorteando Equipamento Dimensional...</h3>
+            <div id="roulette-viewport" class="roulette-viewport">
+                <div class="roulette-center-line"></div>
+                <div id="roulette-track" class="roulette-track"></div>
+            </div>
+            <p class="text-xs text-gray-500 font-mono mt-3 uppercase">O laser central determinará sua recompensa</p>
         </div>
 
         <!-- Fase 2: Revelação do Item -->
@@ -371,7 +477,6 @@
                 </button>
             </div>
 
-            <!-- Fallback de Erro Seguro -->
             <div id="loot-content-error" class="hidden w-full flex flex-col items-center">
                 <div class="text-7xl mb-4">⚠️</div>
                 <h2 class="text-3xl font-bold text-red-500 uppercase tracking-wider mb-2 text-glow-red">Erro no Sistema</h2>
@@ -395,7 +500,6 @@
                     <div class="text-sm text-blue-300 opacity-80" id="player-rank">Classe: Nenhuma | Rank: E</div>
                 </div>
             </div>
-            <!-- Status do Supabase Cloud -->
             <div class="flex items-center gap-2 px-3 py-1 rounded bg-black bg-opacity-50 border border-gray-800 text-xs">
                 <span id="sync-led" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
                 <span id="sync-text" class="text-gray-400 font-mono">Conectando...</span>
@@ -403,7 +507,6 @@
         </div>
 
         <div class="w-full md:w-1/2 flex flex-col gap-2">
-            <!-- XP Real -->
             <div class="flex items-center gap-2 text-xs font-bold">
                 <span class="w-12 text-yellow-400">EXP</span>
                 <div class="status-bar-bg h-3 flex-grow rounded-full overflow-hidden relative">
@@ -411,7 +514,6 @@
                 </div>
                 <span id="xp-text" class="w-24 text-right text-yellow-200">0/200</span>
             </div>
-            <!-- Power Status -->
             <div class="flex items-center gap-2 text-xs font-bold mt-1">
                 <span class="w-12 text-purple-400">POWER</span>
                 <div class="flex-grow text-glow-purple text-lg" id="player-power">0</div>
@@ -433,38 +535,32 @@
             </nav>
         </aside>
 
-        <!-- Coluna 2: Conteúdo Principal (Quests, Ranking, Admin ou Inventário) -->
+        <!-- Coluna 2: Conteúdo Principal -->
         <section class="sys-panel flex-grow flex flex-col min-h-[45vh] md:min-h-full" id="main-content-area">
-            <!-- Header Dinâmico -->
             <header class="p-4 border-b border-blue-900 border-opacity-50 flex justify-between items-center bg-black bg-opacity-30">
                 <h2 id="active-category-title" class="text-xl font-bold text-glow uppercase tracking-wide border-l-4 border-blue-500 pl-2">
                     Categoria
                 </h2>
-                <span id="category-badge" class="text-xs border border-blue-500 px-2 py-1 rounded bg-blue-900 bg-opacity-20 text-blue-300">
-                    Main Quest
-                </span>
+                <div class="flex items-center gap-2">
+                    <button id="header-request-btn" onclick="goToRequestQuest()" class="text-xs border border-cyan-500 px-2.5 py-1 rounded bg-cyan-950 hover:bg-cyan-800 text-cyan-200 font-bold uppercase transition-all">
+                        + Solicitar Missão
+                    </button>
+                    <span id="category-badge" class="text-xs border border-blue-500 px-2 py-1 rounded bg-blue-900 bg-opacity-20 text-blue-300">
+                        Main Quest
+                    </span>
+                </div>
             </header>
             
-            <!-- Container Dinâmico -->
             <div class="p-4 flex-grow overflow-y-auto" id="content-container">
                 
-                <!-- Formulário Quick Add Task -->
-                <form id="add-task-form" class="mb-4 flex gap-2">
-                    <input type="text" id="new-task-input" placeholder="Adicionar missão rápida nesta categoria..." class="flex-grow bg-black bg-opacity-50 border border-blue-800 rounded px-3 py-2 text-sm text-blue-100 placeholder-blue-800 focus:outline-none focus:border-blue-400 transition-all">
-                    <button type="submit" id="quick-add-btn" class="bg-blue-900 bg-opacity-40 border border-blue-500 hover:bg-blue-700 hover:bg-opacity-50 px-4 py-2 rounded text-blue-300 font-bold uppercase transition-all text-sm flex-shrink-0">
-                        Add
-                    </button>
-                </form>
-
                 <!-- Lista de Tarefas / Painel Admin / Ranking -->
-                <ul id="category-task-list" class="space-y-2"></ul>
+                <ul id="category-task-list" class="space-y-2.5"></ul>
 
-                <!-- Container do Inventário (Oculto por padrão) -->
+                <!-- Container do Inventário -->
                 <div id="inventory-container" class="hidden h-full flex flex-col items-center justify-start p-4 md:p-8">
                     <h3 class="text-blue-400 uppercase tracking-widest font-bold mb-8 text-xl">Equipamentos Ativos</h3>
                     
                     <div class="grid grid-cols-[1fr_auto_1fr] gap-4 md:gap-12 w-full max-w-3xl items-center">
-                        <!-- Lado Esquerdo -->
                         <div class="flex flex-col gap-6 items-end">
                             <div class="flex flex-col items-center">
                                 <div class="text-xs text-gray-500 uppercase mb-1 font-bold tracking-wider">Capacete</div>
@@ -480,7 +576,6 @@
                             </div>
                         </div>
 
-                        <!-- Centro (Silhueta) -->
                         <div class="flex flex-col items-center justify-center relative w-24 md:w-32 h-64 md:h-80 mx-2">
                             <div class="absolute inset-0 bg-blue-500 opacity-15 blur-2xl rounded-full z-0"></div>
                             <div id="character-avatar-container" class="text-7xl md:text-9xl filter drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] relative z-10 leading-none">
@@ -488,7 +583,6 @@
                             </div>
                         </div>
 
-                        <!-- Lado Direito -->
                         <div class="flex flex-col gap-6 items-start">
                             <div class="flex flex-col items-center">
                                 <div class="text-xs text-gray-500 uppercase mb-1 font-bold tracking-wider">Capa</div>
@@ -540,7 +634,7 @@
             <!-- Daily Quests -->
             <div class="sys-panel flex flex-col">
                 <div class="p-2 border-b border-blue-900 border-opacity-50 text-sm font-bold text-yellow-400 uppercase tracking-widest bg-black bg-opacity-30 flex justify-between items-center">
-                    <span>Daily Quests</span>
+                    <span>Daily Quests (Hábitos)</span>
                     <span id="daily-box-status" class="text-xs opacity-50">🎁</span>
                 </div>
                 <ul id="daily-list" class="p-3 space-y-2 text-sm"></ul>
@@ -582,18 +676,21 @@
     </main>
 
     <footer class="text-center text-[10px] text-blue-900 opacity-60 mt-2">
-        System Integration Status: Supabase PostgreSQL Realtime Engine | Solo Leveling OS v5.0 Multiplayer
+        System Integration Status: Supabase PostgreSQL Realtime Engine | Solo Leveling OS v6.0 Master Edition
     </footer>
 
     <script>
         /**
          * ==========================================
-         * CONFIGURAÇÃO DO SUPABASE
+         * CONFIGURAÇÕES DO SUPABASE & SENHA MASTER
          * ==========================================
          */
         const SUPABASE_URL = 'https://wfcxmhwncrgbfokirttu.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_Na62n57oBXv5_YKkj8VfJQ_O7Sh1n2m';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // SENHA DO ARQUITETO (PARA APROVAR MISSÕES DOS AMIGOS)
+        const MASTER_PASSWORD = 'MONARCA2026';
 
         const LEGACY_STORAGE_KEY = 'soloLevelingOS_Save_v4';
         const AWAKENING_SESSION_KEY = 'soloLevelingOS_Awakened_Session';
@@ -605,11 +702,78 @@
 
         /**
          * ==========================================
+         * TABELA DE DIFICULDADES E XP BALANCEADO
+         * ==========================================
+         */
+        const DIFFICULTY_CONFIG = {
+            'Fácil':   { minXp: 8,  maxXp: 15, color: 'text-green-400 border-green-600 bg-green-950' },
+            'Médio':   { minXp: 18, maxXp: 30, color: 'text-blue-400 border-blue-600 bg-blue-950' },
+            'Difícil': { minXp: 35, maxXp: 55, color: 'text-purple-400 border-purple-600 bg-purple-950' },
+            'Extremo': { minXp: 65, maxXp: 100, color: 'text-red-400 border-red-600 bg-red-950' }
+        };
+
+        function rollXpForDifficulty(diff) {
+            const cfg = DIFFICULTY_CONFIG[diff] || DIFFICULTY_CONFIG['Fácil'];
+            return Math.floor(Math.random() * (cfg.maxXp - cfg.minXp + 1)) + cfg.minXp;
+        }
+
+        /**
+         * ==========================================
+         * BANCO DE HÁBITOS DIÁRIOS E SEMANAIS (NÃO-REPETITIVOS)
+         * ==========================================
+         */
+        const DAILY_HABITS_POOL = [
+            { code: 'dh1', text: 'Beber pelo menos 2 litros de água ao longo do dia', diff: 'Fácil' },
+            { code: 'dh2', text: 'Ler 10 páginas de um livro de desenvolvimento ou filosofia', diff: 'Médio' },
+            { code: 'dh3', text: 'Fazer 15 minutos de alongamento físico e mobilidade', diff: 'Fácil' },
+            { code: 'dh4', text: 'Realizar 30 minutos de caminhada ou exercício físico', diff: 'Médio' },
+            { code: 'dh5', text: 'Ficar 45 minutos antes de dormir sem celular ou redes sociais', diff: 'Difícil' },
+            { code: 'dh6', text: 'Organizar a mesa de estudo/trabalho antes de iniciar o dia', diff: 'Fácil' },
+            { code: 'dh7', text: 'Praticar 10 minutos de respiração consciente ou silêncio mental', diff: 'Fácil' },
+            { code: 'dh8', text: 'Fazer uma refeição principal 100% limpa (sem açúcar/ultraprocessados)', diff: 'Médio' },
+            { code: 'dh9', text: 'Definir as 3 prioridades do dia por escrito e concluir a primeira', diff: 'Médio' },
+            { code: 'dh10', text: 'Completar 1 bloco de 30min de foco total (Pomodoro) sem distrações', diff: 'Médio' },
+            { code: 'dh11', text: 'Executar 3 séries de flexões ou agachamentos livres', diff: 'Médio' },
+            { code: 'dh12', text: 'Expor-se à luz natural do sol por 10 minutos pela manhã', diff: 'Fácil' },
+            { code: 'dh13', text: 'Revisar os gastos das últimas 24h e manter controle financeiro', diff: 'Fácil' },
+            { code: 'dh14', text: 'Passar o dia inteiro sem reclamar de imprevistos (Prática Estoica)', diff: 'Difícil' },
+            { code: 'dh15', text: 'Arrumar a cama e o quarto imediatamente após acordar', diff: 'Fácil' },
+            { code: 'dh16', text: 'Substituir qualquer bebida açucarada por água ou chá hoje', diff: 'Fácil' },
+            { code: 'dh17', text: 'Estudar 25 minutos de um tema técnico ou profissional novo', diff: 'Médio' },
+            { code: 'dh18', text: 'Manter postura correta e levantar da cadeira a cada 1 hora', diff: 'Fácil' },
+            { code: 'dh19', text: 'Consumir pelo menos 2 porções de frutas ou vegetais hoje', diff: 'Fácil' },
+            { code: 'dh20', text: 'Escrever 1 aprendizado ou ideia importante antes de encerrar o dia', diff: 'Fácil' }
+        ];
+
+        const WEEKLY_HABITS_POOL = [
+            { code: 'wh1', text: 'Completar pelo menos 3 sessões de treino físico nesta semana', diff: 'Difícil' },
+            { code: 'wh2', text: 'Concluir a leitura de um capítulo completo e refletir sobre o tema', diff: 'Médio' },
+            { code: 'wh3', text: 'Revisar planilha financeira semanal e cortar gastos desnecessários', diff: 'Médio' },
+            { code: 'wh4', text: 'Realizar uma limpeza e organização completa no ambiente pessoal', diff: 'Médio' },
+            { code: 'wh5', text: 'Dedicar um momento de qualidade desconectado com família ou amigos', diff: 'Fácil' },
+            { code: 'wh6', text: 'Planejar o calendário e metas principais da próxima semana', diff: 'Fácil' },
+            { code: 'wh7', text: 'Passar 3 dias da semana com zero delivery ou fast-food', diff: 'Difícil' },
+            { code: 'wh8', text: 'Acumular 2 horas de estudo focado em evolução de carreira/PDI', diff: 'Difícil' },
+            { code: 'wh9', text: 'Dormir pelo menos 7h por noite em 5 dias desta semana', diff: 'Difícil' },
+            { code: 'wh10', text: 'Organizar arquivos digitais do PC e limpar pendências acumuladas', diff: 'Fácil' }
+        ];
+
+        const PENALTY_QUESTS_POOL = [
+            '💀 [PENALIDADE] Zona de Sobrevivência: 50 Flexões + 50 Agachamentos + 1L de Água',
+            '💀 [PENALIDADE] Disciplina Forçada: 45 minutos de estudo/leitura focado com celular em outro cômodo',
+            '💀 [PENALIDADE] Purificação Física: 35 minutos de caminhada rápida/corrida + zero açúcar hoje',
+            '💀 [PENALIDADE] Ordem Absoluta: Faxina completa no quarto/mesa + 30 Polichinelos'
+        ];
+
+        /**
+         * ==========================================
          * STATE DO JOGO E DADOS
          * ==========================================
          */
         let currentUser = null;
         let authMode = 'login';
+        let isMasterUnlocked = false;
+        let preselectedCategoryForRequest = null;
 
         let player = {
             username: "Caçador",
@@ -632,7 +796,10 @@
             daily: new Date().toDateString(),
             weekly: getWeekNumber(new Date()),
             monthly: new Date().getMonth(),
-            yearly: new Date().getFullYear()
+            yearly: new Date().getFullYear(),
+            last_daily_codes: [],
+            last_weekly_codes: [],
+            locked_category: null
         };
 
         const ranks = { 1: "E", 15: "D", 30: "C", 50: "B", 75: "A", 100: "S", 150: "Nacional", 200: "Global", 250: "Monarca" };
@@ -688,7 +855,6 @@
                 currentUser = session.user;
                 await syncAllFromSupabase(false);
 
-                // Se já aceitou a notificação nesta sessão de navegador, entra direto
                 if (sessionStorage.getItem(AWAKENING_SESSION_KEY) === 'true') {
                     screen.classList.add('hidden');
                 }
@@ -717,7 +883,6 @@
                     showSystemNotification(`Bem-vindo de volta, Caçador ${player.username}.`, 'success');
                 }, 420);
             } else {
-                // Transiciona para a tela de Login / Registro de Caçador
                 headerTitle.innerText = "HUNTER ACCESS";
                 stepInvite.classList.add('hidden');
                 stepAuth.classList.remove('hidden');
@@ -787,9 +952,8 @@
                     });
 
                     if (error) throw error;
-
                     if (data.user && !data.session) {
-                        throw new Error("Conta criada! Desative a opção 'Confirm Email' no painel Authentication -> Providers -> Email do Supabase para logar direto.");
+                        throw new Error("Conta criada! Desative 'Confirm Email' em Authentication -> Providers -> Email no Supabase.");
                     }
 
                     currentUser = data.user;
@@ -814,7 +978,7 @@
 
             } catch (err) {
                 console.error("Erro de autenticação:", err);
-                errorMsg.innerText = err.message || "Falha na autenticação. Verifique seus dados.";
+                errorMsg.innerText = err.message || "Falha na autenticação.";
                 errorMsg.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
@@ -850,6 +1014,118 @@
 
         /**
          * ==========================================
+         * GERADOR DE HÁBITOS E SISTEMA DE PENALIDADE
+         * ==========================================
+         */
+        async function generateRandomPeriodicQuests(periodType) {
+            if (!currentUser) return;
+            const isDaily = periodType === 'daily';
+            const pool = isDaily ? DAILY_HABITS_POOL : WEEKLY_HABITS_POOL;
+            const count = isDaily ? 4 : 3;
+            const lastCodesKey = isDaily ? 'last_daily_codes' : 'last_weekly_codes';
+            const lastCodes = Array.isArray(resetTimestamps[lastCodesKey]) ? resetTimestamps[lastCodesKey] : [];
+
+            // Filtra para NUNCA repetir as missões do dia/semana anterior
+            let available = pool.filter(item => !lastCodes.includes(item.code));
+            if (available.length < count) available = [...pool];
+
+            // Embaralha aleatoriamente para cada jogador
+            for (let i = available.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [available[i], available[j]] = [available[j], available[i]];
+            }
+
+            const selected = available.slice(0, count);
+            resetTimestamps[lastCodesKey] = selected.map(s => s.code);
+
+            // Remove as missões antigas desse período no banco
+            const oldIds = periodicQuests[periodType].list
+                .filter(t => !t.isPenalty)
+                .map(t => t.id);
+
+            if (oldIds.length > 0) {
+                await supabaseClient.from('quests').delete().in('id', oldIds);
+            }
+
+            // Insere as novas missões sorteadas já aprovadas pelo Sistema
+            const newRows = selected.map(s => ({
+                user_id: currentUser.id,
+                username: player.username,
+                quest: s.text,
+                categoria: 'Saúde',
+                tipo: isDaily ? 'Daily' : 'Weekly',
+                dificuldade: s.diff,
+                xp: rollXpForDifficulty(s.diff),
+                concluida: false,
+                aprovada: true,
+                subtarefas: []
+            }));
+
+            const { data: inserted } = await supabaseClient.from('quests').insert(newRows).select();
+            const penaltyTasks = periodicQuests[periodType].list.filter(t => t.isPenalty);
+
+            periodicQuests[periodType].list = [
+                ...penaltyTasks,
+                ...(inserted || []).map(row => mapRowToTaskObj(row))
+            ];
+            periodicQuests[periodType].boxClaimed = false;
+            updateBoxIcon(periodType, false);
+        }
+
+        async function applyDailyPenalty() {
+            if (!currentUser) return;
+            const penaltiesApplied = [];
+
+            // 1. Dreno de XP ou Queda de Nível
+            const xpLoss = Math.max(40, Math.floor(player.xp * 0.35));
+            if (player.xp >= xpLoss) {
+                player.xp -= xpLoss;
+                penaltiesApplied.push(`• Dreno de Energia: -${xpLoss} EXP`);
+            } else if (player.level > 1) {
+                player.level--;
+                player.xp = 0;
+                penaltiesApplied.push(`• Regressão Dimensional: Caiu para o Level ${player.level}!`);
+            } else {
+                player.xp = 0;
+                penaltiesApplied.push(`• EXP reduzido a 0.`);
+            }
+
+            // 2. Bloqueio de Categoria Principal Aleatória
+            const mainCatKeys = Object.keys(categories).filter(k => !categories[k].isSystem);
+            const randomCatKey = mainCatKeys[Math.floor(Math.random() * mainCatKeys.length)];
+            resetTimestamps.locked_category = randomCatKey;
+            penaltiesApplied.push(`• Categoria Bloqueada: [${categories[randomCatKey].title}] 🔒`);
+
+            // 3. Injeção da Missão de Sobrevivência (Penalidade)
+            const penaltyText = PENALTY_QUESTS_POOL[Math.floor(Math.random() * PENALTY_QUESTS_POOL.length)];
+            const { data: penRow } = await supabaseClient.from('quests').insert([{
+                user_id: currentUser.id,
+                username: player.username,
+                quest: penaltyText,
+                categoria: 'Saúde',
+                tipo: 'Penalty',
+                dificuldade: 'Difícil',
+                xp: 15,
+                concluida: false,
+                aprovada: true,
+                subtarefas: []
+            }]).select().single();
+
+            if (penRow) {
+                periodicQuests.daily.list.unshift(mapRowToTaskObj(penRow));
+            }
+            penaltiesApplied.push(`• Missão de Sobrevivência injetada nas Daily Quests!`);
+
+            // Exibe Modal de Penalidade
+            const detailsEl = document.getElementById('penalty-modal-details');
+            if (detailsEl) {
+                detailsEl.innerHTML = penaltiesApplied.map(p => `<div>${p}</div>`).join('');
+            }
+            document.getElementById('penalty-modal').classList.remove('hidden');
+        }
+
+        /**
+         * ==========================================
          * BANCO DE DADOS SUPABASE (PLAYERS & QUESTS)
          * ==========================================
          */
@@ -878,11 +1154,24 @@
             });
         }
 
-        // Cria o perfil na tabela players caso seja o primeiro login (e migra dados locais antigos se existirem)
+        function mapRowToTaskObj(row) {
+            const normTipo = normalizeStr(row.tipo);
+            return {
+                id: row.id,
+                text: String(row.quest).trim(),
+                xp: row.xp ?? 15,
+                done: Boolean(row.concluida),
+                dificuldade: row.dificuldade || 'Fácil',
+                subtarefas: Array.isArray(row.subtarefas) ? row.subtarefas : [],
+                aprovada: row.aprovada !== undefined ? Boolean(row.aprovada) : true,
+                isPenalty: normTipo.includes('penalty') || String(row.quest).includes('[PENALIDADE]')
+            };
+        }
+
         async function ensurePlayerProfile(preferredUsername = null) {
             if (!currentUser) return;
 
-            const { data: existing, error: fetchErr } = await supabaseClient
+            const { data: existing } = await supabaseClient
                 .from('players')
                 .select('*')
                 .eq('id', currentUser.id)
@@ -890,50 +1179,32 @@
 
             if (existing) return existing;
 
-            // Verifica se existe save antigo no navegador para migrar para a nuvem
-            let initialPlayer = { ...player };
-            let initialTallies = { ...categoryTallies };
-            let initialResets = { ...resetTimestamps };
-
-            const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
-            if (legacyRaw) {
-                try {
-                    const parsed = JSON.parse(legacyRaw);
-                    if (parsed.player) initialPlayer = { ...initialPlayer, ...parsed.player };
-                    if (parsed.categoryTallies) initialTallies = { ...initialTallies, ...parsed.categoryTallies };
-                } catch (e) {}
-            }
-
             const finalUsername = preferredUsername 
                 || currentUser.user_metadata?.username 
                 || currentUser.email?.split('@')[0] 
                 || 'Caçador';
 
-            let totalPower = 0;
-            Object.values(initialPlayer.equipment || {}).forEach(eq => { if (eq) totalPower += eq.power; });
-
             const newProfile = {
                 id: currentUser.id,
                 username: finalUsername,
-                level: initialPlayer.level || 1,
-                xp: Math.floor(initialPlayer.xp || 0),
-                max_xp: initialPlayer.maxXp || 200,
-                power: totalPower,
-                rank: initialPlayer.rank || 'E',
-                player_class: initialPlayer.playerClass || 'Nenhuma',
-                equipment: initialPlayer.equipment || player.equipment,
-                category_tallies: initialTallies,
-                reset_timestamps: initialResets,
+                level: 1,
+                xp: 0,
+                max_xp: 200,
+                power: 0,
+                rank: 'E',
+                player_class: 'Nenhuma',
+                equipment: player.equipment,
+                category_tallies: categoryTallies,
+                reset_timestamps: resetTimestamps,
                 boxes_claimed: getBoxesClaimedObject()
             };
 
-            const { data: inserted, error: insertErr } = await supabaseClient
+            const { data: inserted } = await supabaseClient
                 .from('players')
                 .insert([newProfile])
                 .select()
                 .single();
 
-            if (insertErr) console.error("Erro ao criar perfil inicial:", insertErr);
             return inserted || newProfile;
         }
 
@@ -960,7 +1231,6 @@
                     if (profile.boxes_claimed) applyBoxesClaimedObject(profile.boxes_claimed);
                 }
 
-                // Busca todas as missões do jogador logado
                 const { data: questsData, error: questsErr } = await supabaseClient
                     .from('quests')
                     .select('*')
@@ -974,16 +1244,10 @@
 
                 (questsData || []).forEach(row => {
                     if (!row.quest || !String(row.quest).trim()) return;
-
-                    const taskObj = {
-                        id: row.id,
-                        text: String(row.quest).trim(),
-                        xp: row.xp ?? 20,
-                        done: Boolean(row.concluida)
-                    };
-
+                    const taskObj = mapRowToTaskObj(row);
                     const normTipo = normalizeStr(row.tipo);
-                    if (normTipo.includes('daily') || normTipo.includes('diaria')) {
+
+                    if (normTipo.includes('daily') || normTipo.includes('diaria') || taskObj.isPenalty) {
                         periodicQuests.daily.list.push(taskObj);
                     } else if (normTipo.includes('weekly') || normTipo.includes('semanal')) {
                         periodicQuests.weekly.list.push(taskObj);
@@ -997,6 +1261,21 @@
                     }
                 });
 
+                // Se o jogador ainda não tiver Daily ou Weekly quests geradas, gera automaticamente!
+                let generatedNew = false;
+                if (periodicQuests.daily.list.filter(t => !t.isPenalty).length === 0) {
+                    await generateRandomPeriodicQuests('daily');
+                    generatedNew = true;
+                }
+                if (periodicQuests.weekly.list.length === 0) {
+                    await generateRandomPeriodicQuests('weekly');
+                    generatedNew = true;
+                }
+                if (generatedNew) await savePlayerToSupabase();
+
+                // Verifica se há virada de dia/semana pendente
+                await checkPeriodicResets(new Date());
+
                 updatePlayerUI();
                 recalcPower();
                 renderTabs();
@@ -1004,9 +1283,9 @@
                 renderPeriodicQuests();
                 setSyncStatus('online');
 
-                if (isManual) showSystemNotification('Sincronização com o Supabase concluída!', 'success');
+                if (isManual) showSystemNotification('Sincronização concluída!', 'success');
             } catch (err) {
-                console.error("Erro ao sincronizar com Supabase:", err);
+                console.error("Erro ao sincronizar:", err);
                 setSyncStatus('offline');
                 if (isManual) showSystemNotification('Erro ao comunicar com o servidor.', 'error');
             }
@@ -1042,25 +1321,33 @@
                 if (error) throw error;
                 setSyncStatus('online');
             } catch (err) {
-                console.error("Falha ao salvar perfil no Supabase:", err);
+                console.error("Falha ao salvar perfil:", err);
                 setSyncStatus('offline');
             }
         }
 
-        async function criarMissaoNoSupabase(text, categoriaTitle, tipoTitle, xp) {
+        async function criarMissaoNoSupabase(text, categoriaTitle, tipoTitle, dificuldade, subtarefas, aprovada) {
             if (!currentUser) return null;
             setSyncStatus('syncing');
+            const rolledXp = rollXpForDifficulty(dificuldade);
+
             try {
+                const payload = {
+                    user_id: currentUser.id,
+                    username: player.username,
+                    quest: text,
+                    categoria: categoriaTitle,
+                    tipo: tipoTitle,
+                    dificuldade: dificuldade,
+                    subtarefas: subtarefas,
+                    xp: rolledXp,
+                    concluida: false,
+                    aprovada: aprovada
+                };
+
                 const { data, error } = await supabaseClient
                     .from('quests')
-                    .insert([{
-                        user_id: currentUser.id,
-                        quest: text,
-                        categoria: categoriaTitle,
-                        tipo: tipoTitle,
-                        xp: xp,
-                        concluida: false
-                    }])
+                    .insert([payload])
                     .select()
                     .single();
 
@@ -1068,22 +1355,21 @@
                 setSyncStatus('online');
                 return data;
             } catch (err) {
-                console.error("Erro ao criar missão no Supabase:", err);
+                console.error("Erro ao criar missão:", err);
                 setSyncStatus('offline');
                 return null;
             }
         }
 
-        async function atualizarStatusNoSupabase(taskId, isDone) {
+        async function atualizarMissaoNoSupabase(taskId, updates) {
             if (!currentUser) return;
             try {
                 await supabaseClient
                     .from('quests')
-                    .update({ concluida: isDone })
-                    .eq('id', taskId)
-                    .eq('user_id', currentUser.id);
+                    .update(updates)
+                    .eq('id', taskId);
             } catch (err) {
-                console.warn("Erro ao atualizar status da missão:", err);
+                console.warn("Erro ao atualizar missão:", err);
             }
         }
 
@@ -1101,17 +1387,10 @@
             renderTabs();
 
             try {
-                const { error } = await supabaseClient
-                    .from('quests')
-                    .delete()
-                    .eq('id', taskId)
-                    .eq('user_id', currentUser.id);
-
-                if (error) throw error;
+                await supabaseClient.from('quests').delete().eq('id', taskId);
                 setSyncStatus('online');
-                showSystemNotification('Missão removida do Sistema.', 'success');
+                showSystemNotification('Missão removida.', 'success');
             } catch (err) {
-                console.error("Erro ao excluir missão:", err);
                 setSyncStatus('offline');
             }
         }
@@ -1174,7 +1453,6 @@
         function matchCategoryKey(rawCategoryName) {
             const normCat = normalizeStr(rawCategoryName);
             if (!normCat) return 'saude';
-
             if (normCat.includes('saude')) return 'saude';
             if (normCat.includes('estud')) return 'estudo';
             if (normCat.includes('trabalh') || normCat.includes('pdi')) return 'trabalho';
@@ -1191,29 +1469,18 @@
             ) || 'saude';
         }
 
-        async function resetSaveConfirmation() {
-            if (!currentUser) return;
-            if (confirm("⚠️ ATENÇÃO: Deseja resetar seu Nível, XP e Equipamentos para o Nível 1 na nuvem? (Suas missões não serão apagadas).")) {
-                player.level = 1;
-                player.xp = 0;
-                player.maxXp = 200;
-                player.power = 0;
-                player.rank = "E";
-                player.playerClass = "Nenhuma";
-                player.equipment = { capacete: null, peitoral: null, botas: null, capa: null, arma_principal: null, arma_secundaria: null };
-                Object.keys(categoryTallies).forEach(k => categoryTallies[k] = 0);
-                
-                await savePlayerToSupabase();
-                updatePlayerUI();
-                recalcPower();
-                renderInventory();
-                showSystemNotification('Status do Jogador resetado para o Nível 1.', 'success');
+        function goToRequestQuest() {
+            if (!categories[activeCategoryId]?.isSystem) {
+                preselectedCategoryForRequest = `cat_${activeCategoryId}`;
             }
+            activeCategoryId = 'admin';
+            renderTabs();
+            renderCategory('admin');
         }
 
         /**
          * ==========================================
-         * SISTEMA DE LOOT & EQUIPAMENTOS
+         * SISTEMA DE LOOT & ROLETA CS:GO
          * ==========================================
          */
         const equipSlots = ['capacete', 'peitoral', 'botas', 'capa', 'arma_principal', 'arma_secundaria'];
@@ -1241,12 +1508,15 @@
         };
 
         let currentLootItem = null;
+        let currentLootBoxType = 'daily';
+        let isRouletteSpinning = false;
 
         function checkLootboxTriggers() {
             ['daily', 'weekly', 'monthly', 'yearly'].forEach(type => {
                 const group = periodicQuests[type];
-                if (group.list.length > 0 && !group.boxClaimed) {
-                    if (group.list.every(t => t.done)) {
+                const approvedTasks = group.list.filter(t => t.aprovada && !t.isPenalty);
+                if (approvedTasks.length > 0 && !group.boxClaimed) {
+                    if (approvedTasks.every(t => t.done)) {
                         group.boxClaimed = true;
                         updateBoxIcon(type, true);
                         initiateLootbox(type);
@@ -1256,10 +1526,13 @@
 
             Object.keys(categories).forEach(catId => {
                 const cat = categories[catId];
-                if (!cat.isSystem && cat.tasks.length > 0 && !cat.boxClaimed) {
-                    if (cat.tasks.every(t => t.done)) {
-                        cat.boxClaimed = true;
-                        initiateLootbox('category', cat.title);
+                if (!cat.isSystem) {
+                    const approvedTasks = cat.tasks.filter(t => t.aprovada);
+                    if (approvedTasks.length > 0 && !cat.boxClaimed) {
+                        if (approvedTasks.every(t => t.done)) {
+                            cat.boxClaimed = true;
+                            initiateLootbox('category', cat.title);
+                        }
                     }
                 }
             });
@@ -1268,17 +1541,20 @@
         function initiateLootbox(boxType, customName = null) {
             const modal = document.getElementById('lootbox-modal');
             const phase1 = document.getElementById('lootbox-phase-1');
+            const phaseRoulette = document.getElementById('lootbox-phase-roulette');
             const phase2 = document.getElementById('lootbox-phase-2');
             const title = document.getElementById('lootbox-title');
             
             try {
+                currentLootBoxType = boxType;
                 currentLootItem = generateLoot(boxType);
-                if (!currentLootItem) throw new Error("Falha ao gerar item");
+                isRouletteSpinning = false;
                 
                 const boxName = customName ? `${customName} Box` : `${boxType.toUpperCase()} Box`;
                 title.innerText = `${boxName} Obtida!`;
                 
                 phase1.classList.remove('hidden');
+                phaseRoulette.classList.add('hidden');
                 phase2.classList.add('hidden');
                 modal.classList.remove('hidden');
             } catch (error) {
@@ -1287,12 +1563,62 @@
         }
 
         function openLootbox() {
+            if (isRouletteSpinning) return;
+            isRouletteSpinning = true;
+
             const phase1 = document.getElementById('lootbox-phase-1');
+            const phaseRoulette = document.getElementById('lootbox-phase-roulette');
+            const track = document.getElementById('roulette-track');
+            const viewport = document.getElementById('roulette-viewport');
+
+            phase1.classList.add('hidden');
+            phaseRoulette.classList.remove('hidden');
+
+            // Gera 45 itens para a fita da roleta; o índice 38 é o item vencedor
+            const WINNING_INDEX = 38;
+            const TOTAL_CARDS = 45;
+            track.innerHTML = '';
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0px)';
+
+            for (let i = 0; i < TOTAL_CARDS; i++) {
+                const item = (i === WINNING_INDEX) ? currentLootItem : generateLoot(currentLootBoxType);
+                const card = document.createElement('div');
+                card.className = `roulette-card border-2 ${item.rarity.borderClass}`;
+                card.style.boxShadow = `inset 0 0 12px ${item.rarity.hex}33`;
+                card.innerHTML = `
+                    <div class="text-4xl mb-1" style="filter: drop-shadow(0 0 6px ${item.rarity.hex})">${slotIcons[item.slot]}</div>
+                    <div class="text-[10px] font-bold uppercase ${item.rarity.colorClass} truncate w-full text-center">${item.rarity.name}</div>
+                    <div class="text-[9px] text-gray-400 uppercase truncate w-full text-center">${item.slotName}</div>
+                `;
+                track.appendChild(card);
+            }
+
+            // Força reflow antes de disparar a animação CSS
+            void track.offsetWidth;
+
+            const cardWidth = 112;
+            const gap = 8;
+            const step = cardWidth + gap; // 120px por card
+            const viewportWidth = viewport.clientWidth || 600;
+            const jitter = Math.floor(Math.random() * 50) - 25; // Parada orgânica dentro do card vencedor
+            const targetOffset = (WINNING_INDEX * step) + (cardWidth / 2) - (viewportWidth / 2) + jitter;
+
+            track.style.transition = 'transform 5.2s cubic-bezier(0.08, 0.82, 0.17, 1)';
+            track.style.transform = `translateX(-${targetOffset}px)`;
+
+            setTimeout(() => {
+                revealFinalLootItem();
+            }, 5450);
+        }
+
+        function revealFinalLootItem() {
+            const phaseRoulette = document.getElementById('lootbox-phase-roulette');
             const phase2 = document.getElementById('lootbox-phase-2');
             const normalContent = document.getElementById('loot-content-normal');
             const errorContent = document.getElementById('loot-content-error');
-            
-            phase1.classList.add('hidden');
+
+            phaseRoulette.classList.add('hidden');
             phase2.classList.remove('hidden');
 
             try {
@@ -1309,14 +1635,12 @@
                 const actionMsg = document.getElementById('loot-action-msg');
                 
                 iconEl.innerText = slotIcons[item.slot];
-                
                 rarityEl.innerText = item.rarity.name;
                 rarityEl.className = `text-xs uppercase tracking-widest font-bold mb-1 ${item.rarity.colorClass}`;
                 
                 const tierText = item.rarity.isGod ? "" : ` - Tier ${item.tier}`;
                 nameEl.innerText = `${item.rarity.name} ${item.slotName}${tierText}`;
                 nameEl.className = `text-2xl md:text-3xl font-bold uppercase tracking-wider mb-2 loot-reveal ${item.rarity.colorClass}`;
-                
                 statsEl.innerText = `Power: +${item.power.toLocaleString()}`;
                 
                 phase2.className = `sys-modal p-8 rounded-lg text-center flex flex-col items-center max-w-md w-full border-4 ${item.rarity.borderClass}`;
@@ -1329,7 +1653,7 @@
                     renderInventory();
                     recalcPower();
                 } else {
-                    const bonusXp = Math.max(15, Math.floor(item.power * 0.25));
+                    const bonusXp = Math.max(10, Math.min(45, Math.floor(item.power * 0.15)));
                     actionMsg.innerText = `Inferior ao atual (Convertido em +${bonusXp} XP)`;
                     actionMsg.className = "p-2 w-full text-sm font-bold bg-gray-900 bg-opacity-50 border border-gray-600 text-gray-400 rounded mb-6";
                     player.xp += bonusXp;
@@ -1337,7 +1661,6 @@
                 }
                 savePlayerToSupabase();
             } catch (error) {
-                console.error("Falha ao abrir a Lootbox:", error);
                 normalContent.classList.add('hidden');
                 errorContent.classList.remove('hidden');
                 phase2.className = `sys-modal p-8 rounded-lg text-center flex flex-col items-center max-w-md w-full border-4 border-red-600 glitch-fx`;
@@ -1375,8 +1698,12 @@
             }
 
             return {
-                id: 'eq_' + Date.now(), slot: slot, slotName: slot.replace('_', ' '),
-                rarity: rarity, tier: tier, power: power,
+                id: 'eq_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                slot: slot,
+                slotName: slot.replace('_', ' '),
+                rarity: rarity,
+                tier: tier,
+                power: power,
                 name: rarity.isGod ? rarity.name : `${rarity.name} ${slot.replace('_', ' ')}`,
                 imageUrl: null 
             };
@@ -1402,7 +1729,7 @@
 
         /**
          * ==========================================
-         * UI RENDERING & LOGIC
+         * UI RENDERING & LOGIC (TRAVA ONE-WAY E SUBTAREFAS)
          * ==========================================
          */
         const DOM = {
@@ -1415,10 +1742,9 @@
             catTitle: document.getElementById('active-category-title'),
             catBadge: document.getElementById('category-badge'),
             catList: document.getElementById('category-task-list'),
-            form: document.getElementById('add-task-form'),
-            input: document.getElementById('new-task-input'),
             modal: document.getElementById('level-up-alert'),
-            inventoryContainer: document.getElementById('inventory-container')
+            inventoryContainer: document.getElementById('inventory-container'),
+            headerRequestBtn: document.getElementById('header-request-btn')
         };
 
         function init() {
@@ -1446,28 +1772,42 @@
             DOM.xpBar.style.width = `${percent}%`;
         }
 
-        function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null) {
+        // TRAVA DEFINITIVA: Uma vez concluída, não pode ser desmarcada!
+        async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null) {
             let task;
             if (listType === 'category') {
                 task = categories[categoryId]?.tasks.find(t => t.id === taskId);
-                if (task && categoryId !== 'admin' && categoryTallies[categoryId] !== undefined) {
-                    if (isDone) categoryTallies[categoryId]++;
-                    else categoryTallies[categoryId] = Math.max(0, categoryTallies[categoryId] - 1);
-                }
             } else {
                 task = periodicQuests[listType]?.list.find(t => t.id === taskId);
             }
 
-            if (!task) return;
-            task.done = isDone;
+            if (!task || task.done || !isDone || !task.aprovada) return;
 
-            if (isDone) {
-                player.xp += xp;
-                if (player.xp >= player.maxXp) setTimeout(processLevelUp, 300);
-                checkLootboxTriggers(); 
-            } else {
-                player.xp = Math.max(0, player.xp - xp);
+            // Se for Extrema, verifica se todas as subtarefas foram concluídas
+            if (task.dificuldade === 'Extremo' && task.subtarefas && task.subtarefas.length > 0) {
+                if (!task.subtarefas.every(st => st.done)) {
+                    showSystemNotification('Conclua todas as subtarefas antes de finalizar uma missão Extrema!', 'error');
+                    renderCategory(activeCategoryId);
+                    return;
+                }
             }
+
+            task.done = true;
+
+            if (listType === 'category' && categoryId !== 'admin' && categoryTallies[categoryId] !== undefined) {
+                categoryTallies[categoryId]++;
+            }
+
+            // Se concluiu uma Missão de Penalidade, desbloqueia a categoria punida!
+            if (task.isPenalty && resetTimestamps.locked_category) {
+                const unlockedCat = categories[resetTimestamps.locked_category]?.title || 'Categoria';
+                resetTimestamps.locked_category = null;
+                showSystemNotification(`Penalidade cumprida! Acesso à categoria [${unlockedCat}] restaurado!`, 'success');
+            }
+
+            player.xp += xp;
+            if (player.xp >= player.maxXp) setTimeout(processLevelUp, 300);
+            checkLootboxTriggers();
 
             updatePlayerUI();
             renderTabs();
@@ -1478,8 +1818,32 @@
                 renderPeriodicQuests();
             }
 
-            atualizarStatusNoSupabase(task.id, isDone);
-            savePlayerToSupabase();
+            await atualizarMissaoNoSupabase(task.id, { concluida: true, subtarefas: task.subtarefas || [] });
+            await savePlayerToSupabase();
+        }
+
+        async function handleSubtaskToggle(taskId, subIdx, listType, categoryId = null) {
+            let task;
+            if (listType === 'category') {
+                task = categories[categoryId]?.tasks.find(t => t.id === taskId);
+            } else {
+                task = periodicQuests[listType]?.list.find(t => t.id === taskId);
+            }
+
+            if (!task || task.done || !task.aprovada || !task.subtarefas?.[subIdx]) return;
+            if (task.subtarefas[subIdx].done) return; // Trava one-way na subtarefa
+
+            task.subtarefas[subIdx].done = true;
+
+            // Se todas as subtarefas foram concluídas, completa a missão Extrema automaticamente!
+            if (task.subtarefas.every(st => st.done)) {
+                showSystemNotification(`Todas as etapas concluídas! Missão Extrema finalizada (+${task.xp} XP)!`, 'success');
+                await handleTaskToggle(taskId, true, task.xp, listType, categoryId);
+            } else {
+                if (listType === 'category') renderCategory(categoryId);
+                else renderPeriodicQuests();
+                await atualizarMissaoNoSupabase(task.id, { subtarefas: task.subtarefas });
+            }
         }
 
         function processLevelUp() {
@@ -1487,7 +1851,6 @@
             const oldLvl = player.level;
             player.level++;
             player.xp = Math.max(0, player.xp - player.maxXp);
-            
             player.maxXp = Math.floor(player.maxXp * 1.35 + 150); 
 
             let evolutionHtml = "";
@@ -1542,12 +1905,13 @@
             for (const [key, data] of Object.entries(categories)) {
                 const btn = document.createElement('button');
                 const isActive = key === activeCategoryId;
-                const taskCount = !data.isSystem ? data.tasks.filter(t => !t.done).length : null;
+                const isLocked = resetTimestamps.locked_category === key;
+                const taskCount = !data.isSystem ? data.tasks.filter(t => !t.done && t.aprovada).length : null;
                 
-                btn.className = `tab-btn w-full text-left px-4 py-3 text-sm flex items-center justify-between text-gray-400 hover:text-blue-200 ${isActive ? 'active' : ''} ${key === 'ranking' ? 'mt-2 border-t border-gray-800 text-yellow-300' : ''}`;
+                btn.className = `tab-btn w-full text-left px-4 py-3 text-sm flex items-center justify-between ${isLocked ? 'text-red-500 opacity-75' : 'text-gray-400 hover:text-blue-200'} ${isActive ? 'active' : ''} ${key === 'ranking' ? 'mt-2 border-t border-gray-800 text-yellow-300' : ''}`;
                 btn.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <span class="text-lg">${data.icon}</span> 
+                        <span class="text-lg">${isLocked ? '🔒' : data.icon}</span> 
                         <span class="uppercase tracking-wider font-semibold">${data.title}</span>
                     </div>
                     ${taskCount ? `<span class="text-xs bg-blue-900 bg-opacity-40 text-blue-300 px-1.5 py-0.5 rounded border border-blue-800">${taskCount}</span>` : ''}
@@ -1568,28 +1932,47 @@
             
             DOM.catList.classList.remove('hidden');
             DOM.inventoryContainer.classList.add('hidden');
-            DOM.form.classList.remove('hidden');
             DOM.catBadge.innerText = cat.isSystem ? 'System Menu' : 'Main Quest';
 
+            if (cat.isSystem) {
+                DOM.headerRequestBtn.classList.add('hidden');
+            } else {
+                DOM.headerRequestBtn.classList.remove('hidden');
+            }
+
             if (categoryId === 'admin') {
-                DOM.form.classList.add('hidden');
                 renderAdminPanel();
                 return;
             } else if (categoryId === 'inventario') {
-                DOM.form.classList.add('hidden');
                 DOM.catList.classList.add('hidden');
                 DOM.inventoryContainer.classList.remove('hidden');
                 renderInventory();
                 return;
             } else if (categoryId === 'ranking') {
-                DOM.form.classList.add('hidden');
                 DOM.catBadge.innerText = 'Global Leaderboard';
                 renderLeaderboard();
                 return;
             }
 
+            // Verifica se esta categoria foi bloqueada pelo Sistema de Penalidade
+            if (resetTimestamps.locked_category === categoryId) {
+                DOM.catList.innerHTML = `
+                    <div class="p-8 border-2 border-red-600 bg-red-950 bg-opacity-30 rounded-lg text-center space-y-3 my-4">
+                        <div class="text-5xl">🔒</div>
+                        <h3 class="text-xl font-bold text-glow-red uppercase tracking-widest">Categoria Bloqueada por Penalidade</h3>
+                        <p class="text-sm text-red-200 max-w-md mx-auto">
+                            O acesso às missões de <b>${cat.title}</b> foi suspenso porque você falhou nas Daily Quests anteriores.
+                        </p>
+                        <p class="text-xs text-yellow-300 font-mono uppercase pt-2">
+                            ➔ Conclua a missão [💀 PENALIDADE] na aba Daily Quests ao lado para desbloquear!
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
             if (cat.tasks.length === 0) {
-                DOM.catList.innerHTML = `<li class="text-center text-gray-500 py-8 text-sm italic">Nenhuma missão ativa nesta categoria.</li>`;
+                DOM.catList.innerHTML = `<li class="text-center text-gray-500 py-8 text-sm italic">Nenhuma missão nesta categoria. Clique em "+ Solicitar Missão" acima para adicionar.</li>`;
                 return;
             }
 
@@ -1682,7 +2065,6 @@
                 DOM.catList.innerHTML = html;
 
             } catch (err) {
-                console.error("Erro ao carregar Leaderboard:", err);
                 DOM.catList.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">Erro ao carregar o Ranking Global.</div>`;
             }
         }
@@ -1728,74 +2110,252 @@
             });
         }
 
+        /**
+         * ==========================================
+         * PAINEL DE ADMINISTRAÇÃO & SENHA MASTER
+         * ==========================================
+         */
         function renderAdminPanel() {
+            const defaultDest = preselectedCategoryForRequest || 'cat_saude';
+            preselectedCategoryForRequest = null;
+
             DOM.catList.innerHTML = `
-                <div class="bg-black bg-opacity-50 p-4 rounded border border-blue-900 border-opacity-50 text-sm space-y-6">
-                    <div>
-                        <h3 class="text-blue-400 font-bold mb-4 uppercase tracking-wider border-b border-blue-900 pb-2">Central de Criação (Supabase Cloud)</h3>
+                <div class="space-y-6 text-sm">
+                    <!-- 1. Solicitação de Nova Missão (Aberta a todos os jogadores, sem escolher XP) -->
+                    <div class="bg-black bg-opacity-50 p-4 rounded border border-blue-900 border-opacity-50">
+                        <div class="flex justify-between items-center border-b border-blue-900 pb-2 mb-4">
+                            <h3 class="text-blue-400 font-bold uppercase tracking-wider">
+                                ${isMasterUnlocked ? '⚡ Criar Missão (Modo Arquiteto - Auto Aprovada)' : '📩 Solicitar Nova Missão ao Arquiteto'}
+                            </h3>
+                            <span class="text-[10px] px-2 py-0.5 rounded border ${isMasterUnlocked ? 'border-green-500 text-green-400' : 'border-yellow-600 text-yellow-400'} uppercase font-bold">
+                                ${isMasterUnlocked ? 'Master Ativo' : 'Requer Aprovação'}
+                            </span>
+                        </div>
+
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-gray-400 text-xs mb-1">Título da Tarefa</label>
-                                <input type="text" id="admin-task-name" placeholder="Ex: Comprar Cadeira Ergonômica..." class="w-full bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-2 text-blue-100 placeholder-gray-700 focus:outline-none focus:border-blue-400">
+                                <label class="block text-gray-400 text-xs mb-1">Título da Missão</label>
+                                <input type="text" id="admin-task-name" placeholder="Ex: Finalizar projeto da faculdade..." class="w-full bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-2 text-blue-100 placeholder-gray-700 focus:outline-none focus:border-blue-400">
                             </div>
+
                             <div class="flex flex-col md:flex-row gap-4">
                                 <div class="w-full md:w-1/2">
-                                    <label class="block text-gray-400 text-xs mb-1">Destino</label>
+                                    <label class="block text-gray-400 text-xs mb-1">Categoria / Destino</label>
                                     <select id="admin-task-type" class="w-full bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-2 text-blue-100 focus:outline-none focus:border-blue-400">
                                         <optgroup label="Main Quests (Categorias)">
-                                            ${Object.keys(categories).filter(k => !categories[k].isSystem).map(k => `<option value="cat_${k}">${categories[k].title}</option>`).join('')}
+                                            ${Object.keys(categories).filter(k => !categories[k].isSystem).map(k => `<option value="cat_${k}" ${defaultDest === 'cat_'+k ? 'selected' : ''}>${categories[k].title}</option>`).join('')}
                                         </optgroup>
-                                        <optgroup label="Periódicas">
-                                            <option value="per_daily">Daily Quest</option>
-                                            <option value="per_weekly">Weekly Quest</option>
-                                            <option value="per_monthly">Monthly Quest</option>
-                                            <option value="per_yearly">Yearly Quest</option>
+                                        <optgroup label="Metas de Longo Prazo">
+                                            <option value="per_monthly">Monthly Quest (Mensal)</option>
+                                            <option value="per_yearly">Yearly Quest (Anual)</option>
                                         </optgroup>
                                     </select>
                                 </div>
+
                                 <div class="w-full md:w-1/2">
-                                    <label class="block text-gray-400 text-xs mb-1">Recompensa de XP</label>
-                                    <input type="number" id="admin-task-xp" value="30" class="w-full bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-2 text-blue-100 focus:outline-none focus:border-blue-400">
+                                    <label class="block text-gray-400 text-xs mb-1">Nível de Dificuldade (XP Sorteado pelo Sistema)</label>
+                                    <select id="admin-task-difficulty" onchange="toggleSubtasksBuilder()" class="w-full bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-2 text-blue-100 focus:outline-none focus:border-blue-400">
+                                        <option value="Fácil">🟢 Fácil (8 ~ 15 XP)</option>
+                                        <option value="Médio">🔵 Médio (18 ~ 30 XP)</option>
+                                        <option value="Difícil">🟣 Difícil (35 ~ 55 XP)</option>
+                                        <option value="Extremo">🔴 Extremo (65 ~ 100 XP | Exige Subtarefas)</option>
+                                    </select>
                                 </div>
                             </div>
-                            <button id="admin-submit-btn" onclick="handleAdminSubmit()" class="w-full mt-4 bg-blue-900 bg-opacity-40 border border-blue-500 hover:bg-blue-700 hover:bg-opacity-50 px-4 py-3 rounded text-blue-300 font-bold uppercase transition-all shadow-[0_0_10px_rgba(0,212,255,0.2)]">
-                                Injetar Missão no Sistema
+
+                            <!-- Construtor de Subtarefas (Obrigatório para Extremo) -->
+                            <div id="subtasks-builder-container" class="hidden p-3 rounded bg-red-950 bg-opacity-20 border border-red-800 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-xs font-bold text-red-400 uppercase tracking-wider">⚠️ Subtarefas Obrigatórias (Mínimo 2 etapas para nível Extremo)</label>
+                                    <button type="button" onclick="addSubtaskInputRow()" class="text-xs bg-red-900 bg-opacity-50 hover:bg-red-800 text-red-200 px-2 py-1 rounded border border-red-600 font-bold uppercase">
+                                        + Etapa
+                                    </button>
+                                </div>
+                                <div id="subtasks-inputs-list" class="space-y-2">
+                                    <input type="text" placeholder="Etapa 1..." class="subtask-input-row w-full bg-black bg-opacity-80 border border-red-900 rounded px-2.5 py-1.5 text-xs text-red-100 focus:outline-none focus:border-red-500">
+                                    <input type="text" placeholder="Etapa 2..." class="subtask-input-row w-full bg-black bg-opacity-80 border border-red-900 rounded px-2.5 py-1.5 text-xs text-red-100 focus:outline-none focus:border-red-500">
+                                </div>
+                            </div>
+
+                            <button id="admin-submit-btn" onclick="handleAdminSubmit()" class="w-full mt-2 bg-blue-900 bg-opacity-40 border border-blue-500 hover:bg-blue-700 hover:bg-opacity-50 px-4 py-3 rounded text-blue-300 font-bold uppercase transition-all shadow-[0_0_10px_rgba(0,212,255,0.2)]">
+                                ${isMasterUnlocked ? '⚡ Injetar Missão Aprovada' : '📨 Enviar Requisição para Aprovação'}
                             </button>
                         </div>
                     </div>
 
-                    <!-- Alterar Nome de Caçador -->
-                    <div class="border-t border-gray-800 pt-4">
-                        <label class="block text-gray-400 text-xs mb-2 uppercase">Identidade do Caçador no Ranking</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="admin-hunter-name" value="${player.username}" class="flex-grow bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-1.5 text-blue-100 focus:outline-none focus:border-blue-400">
-                            <button onclick="updateHunterName()" class="px-4 py-1.5 border border-blue-500 text-blue-300 hover:bg-blue-900 rounded text-xs uppercase font-bold">
-                                Salvar Nome
-                            </button>
-                        </div>
+                    <!-- 2. Terminal do Arquiteto (Senha Master & Fila de Aprovação) -->
+                    <div class="bg-black bg-opacity-60 p-4 rounded border ${isMasterUnlocked ? 'border-purple-500 shadow-[0_0_15px_rgba(179,136,255,0.2)]' : 'border-gray-800'}">
+                        <h3 class="text-purple-400 font-bold mb-3 uppercase tracking-wider border-b border-gray-800 pb-2 flex justify-between items-center">
+                            <span>🔐 Terminal Master do Arquiteto (Aprovação de Missões)</span>
+                            ${isMasterUnlocked ? '<button onclick="lockMasterMode()" class="text-[10px] text-red-400 border border-red-800 px-2 py-0.5 rounded hover:bg-red-950">Trancar</button>' : ''}
+                        </h3>
+
+                        ${!isMasterUnlocked ? `
+                            <div class="flex flex-col md:flex-row gap-2 items-center">
+                                <input type="password" id="master-pass-input" placeholder="Digite a Senha Master do Arquiteto..." class="flex-grow w-full bg-black border border-purple-900 rounded px-3 py-2 text-purple-200 focus:outline-none focus:border-purple-400">
+                                <button onclick="unlockMasterMode()" class="w-full md:w-auto px-6 py-2 bg-purple-950 border border-purple-500 text-purple-200 hover:bg-purple-800 rounded font-bold uppercase tracking-wider">
+                                    Desbloquear
+                                </button>
+                            </div>
+                        ` : `
+                            <div id="master-pending-queue" class="space-y-2">
+                                <div class="text-xs text-gray-400 animate-pulse font-mono">Buscando requisições pendentes de todos os caçadores...</div>
+                            </div>
+                        `}
                     </div>
 
-                    <div class="border-t border-gray-800 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div class="text-xs text-gray-400">
-                            Conta conectada: <span class="text-cyan-300 font-mono">${currentUser?.email || 'Nenhuma'}</span>
+                    <!-- 3. Configurações de Conta -->
+                    <div class="bg-black bg-opacity-50 p-4 rounded border border-gray-800 space-y-4">
+                        <div>
+                            <label class="block text-gray-400 text-xs mb-2 uppercase">Identidade do Caçador no Ranking</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="admin-hunter-name" value="${player.username}" class="flex-grow bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-1.5 text-blue-100 focus:outline-none focus:border-blue-400">
+                                <button onclick="updateHunterName()" class="px-4 py-1.5 border border-blue-500 text-blue-300 hover:bg-blue-900 rounded text-xs uppercase font-bold">
+                                    Salvar Nome
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                            <button onclick="syncAllFromSupabase(true)" class="flex-1 md:flex-initial px-3 py-2 border border-cyan-600 text-cyan-400 hover:bg-cyan-950 rounded text-xs uppercase font-bold transition-all">
-                                🔄 Sincronizar
-                            </button>
-                            <button onclick="triggerAwakeningScreenManual()" class="flex-1 md:flex-initial px-3 py-2 border border-purple-600 text-purple-400 hover:bg-purple-950 rounded text-xs uppercase font-bold transition-all">
-                                ⚡ Tela Inicial
-                            </button>
-                            <button onclick="resetSaveConfirmation()" class="flex-1 md:flex-initial px-3 py-2 border border-red-800 text-red-500 hover:bg-red-950 rounded text-xs uppercase font-bold transition-all">
-                                ⚠️ Resetar Nível
-                            </button>
-                            <button onclick="handleLogout()" class="flex-1 md:flex-initial px-3 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded text-xs uppercase font-bold transition-all">
-                                🚪 Sair
-                            </button>
+
+                        <div class="border-t border-gray-800 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div class="text-xs text-gray-400">
+                                Conta conectada: <span class="text-cyan-300 font-mono">${currentUser?.email || 'Nenhuma'}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                                <button onclick="syncAllFromSupabase(true)" class="flex-1 md:flex-initial px-3 py-2 border border-cyan-600 text-cyan-400 hover:bg-cyan-950 rounded text-xs uppercase font-bold">
+                                    🔄 Sincronizar
+                                </button>
+                                <button onclick="triggerAwakeningScreenManual()" class="flex-1 md:flex-initial px-3 py-2 border border-purple-600 text-purple-400 hover:bg-purple-950 rounded text-xs uppercase font-bold">
+                                    ⚡ Tela Inicial
+                                </button>
+                                <button onclick="handleLogout()" class="flex-1 md:flex-initial px-3 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded text-xs uppercase font-bold">
+                                    🚪 Sair
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
+
+            if (isMasterUnlocked) {
+                loadMasterPendingQueue();
+            }
+        }
+
+        function toggleSubtasksBuilder() {
+            const diff = document.getElementById('admin-task-difficulty')?.value;
+            const container = document.getElementById('subtasks-builder-container');
+            if (!container) return;
+            if (diff === 'Extremo') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function addSubtaskInputRow() {
+            const list = document.getElementById('subtasks-inputs-list');
+            if (!list) return;
+            const count = list.querySelectorAll('.subtask-input-row').length + 1;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = `Etapa ${count}...`;
+            input.className = 'subtask-input-row w-full bg-black bg-opacity-80 border border-red-900 rounded px-2.5 py-1.5 text-xs text-red-100 focus:outline-none focus:border-red-500';
+            list.appendChild(input);
+        }
+
+        function unlockMasterMode() {
+            const input = document.getElementById('master-pass-input');
+            if (input?.value === MASTER_PASSWORD) {
+                isMasterUnlocked = true;
+                showSystemNotification('Modo Arquiteto desbloqueado! Controle total ativado.', 'success');
+                renderAdminPanel();
+            } else {
+                showSystemNotification('Senha Master incorreta. Acesso negado.', 'error');
+            }
+        }
+
+        function lockMasterMode() {
+            isMasterUnlocked = false;
+            renderAdminPanel();
+        }
+
+        async function loadMasterPendingQueue() {
+            const queueEl = document.getElementById('master-pending-queue');
+            if (!queueEl) return;
+
+            try {
+                const { data: pendingList, error } = await supabaseClient
+                    .from('quests')
+                    .select('*')
+                    .eq('aprovada', false)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+
+                if (!pendingList || pendingList.length === 0) {
+                    queueEl.innerHTML = `<div class="text-xs text-gray-500 italic py-2">Nenhuma missão aguardando aprovação no momento.</div>`;
+                    return;
+                }
+
+                queueEl.innerHTML = pendingList.map(item => {
+                    const diffColor = DIFFICULTY_CONFIG[item.dificuldade || 'Fácil']?.color || 'text-gray-300 border-gray-600';
+                    const subs = Array.isArray(item.subtarefas) && item.subtarefas.length > 0
+                        ? `<div class="text-[11px] text-gray-400 mt-1 pl-2 border-l border-red-800">Etapas: ${item.subtarefas.map(s => s.text).join(' ➔ ')}</div>`
+                        : '';
+
+                    return `
+                        <div class="p-3 rounded bg-gray-900 border border-purple-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                            <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-xs font-bold bg-purple-950 text-purple-300 px-2 py-0.5 rounded border border-purple-700">Caçador: ${item.username || 'Amigo'}</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${diffColor}">${item.dificuldade || 'Fácil'} (+${item.xp} XP)</span>
+                                    <span class="text-[10px] text-gray-400 uppercase">[${item.categoria} / ${item.tipo}]</span>
+                                </div>
+                                <div class="text-white font-semibold mt-1">${item.quest}</div>
+                                ${subs}
+                            </div>
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <button onclick="approveQuestMaster('${item.id}')" class="flex-1 md:flex-initial px-3 py-1.5 bg-green-900 bg-opacity-60 hover:bg-green-700 border border-green-500 text-green-200 rounded text-xs font-bold uppercase">
+                                    ✅ Aprovar
+                                </button>
+                                <button onclick="rejectQuestMaster('${item.id}')" class="flex-1 md:flex-initial px-3 py-1.5 bg-red-900 bg-opacity-60 hover:bg-red-700 border border-red-500 text-red-200 rounded text-xs font-bold uppercase">
+                                    ❌ Recusar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                queueEl.innerHTML = `<div class="text-xs text-red-400">Erro ao carregar fila. Verifique se executou o comando SQL de atualização no Supabase.</div>`;
+            }
+        }
+
+        async function approveQuestMaster(questId) {
+            try {
+                const { error } = await supabaseClient
+                    .from('quests')
+                    .update({ aprovada: true })
+                    .eq('id', questId);
+                if (error) throw error;
+                showSystemNotification('Missão aprovada e liberada para o Caçador!', 'success');
+                await syncAllFromSupabase(false);
+            } catch (err) {
+                showSystemNotification('Erro ao aprovar missão.', 'error');
+            }
+        }
+
+        async function rejectQuestMaster(questId) {
+            try {
+                const { error } = await supabaseClient
+                    .from('quests')
+                    .delete()
+                    .eq('id', questId);
+                if (error) throw error;
+                showSystemNotification('Requisição recusada e removida.', 'success');
+                await syncAllFromSupabase(false);
+            } catch (err) {
+                showSystemNotification('Erro ao recusar missão.', 'error');
+            }
         }
 
         async function updateHunterName() {
@@ -1811,18 +2371,32 @@
         async function handleAdminSubmit() {
             const nameInput = document.getElementById('admin-task-name');
             const typeInput = document.getElementById('admin-task-type');
-            const xpInput = document.getElementById('admin-task-xp');
+            const diffInput = document.getElementById('admin-task-difficulty');
             const btn = document.getElementById('admin-submit-btn');
             
             const text = nameInput.value.trim();
             if (!text) {
-                showSystemNotification('Digite o título da missão antes de injetar.', 'error');
+                showSystemNotification('Digite o título da missão.', 'error');
                 return;
             }
             
-            const xp = parseInt(xpInput.value) || 20;
+            const dificuldade = diffInput.value || 'Fácil';
             const typeVal = typeInput.value;
-            
+
+            let subtarefas = [];
+            if (dificuldade === 'Extremo') {
+                const subInputs = document.querySelectorAll('.subtask-input-row');
+                subInputs.forEach(inp => {
+                    if (inp.value.trim()) {
+                        subtarefas.push({ text: inp.value.trim(), done: false });
+                    }
+                });
+                if (subtarefas.length < 2) {
+                    showSystemNotification('Missões de nível Extremo exigem pelo menos 2 subtarefas preenchidas!', 'error');
+                    return;
+                }
+            }
+
             let categoriaDb = "Saúde";
             let tipoDb = "Main Quest";
             let targetCatId = null;
@@ -1838,63 +2412,43 @@
                 tipoDb = targetPerId.charAt(0).toUpperCase() + targetPerId.slice(1);
             }
 
+            const autoApprove = isMasterUnlocked;
             const oldText = btn.innerText;
-            btn.innerText = "Gravando no Servidor...";
+            btn.innerText = "Registrando...";
             btn.disabled = true;
 
-            const inserted = await criarMissaoNoSupabase(text, categoriaDb, tipoDb, xp);
+            const inserted = await criarMissaoNoSupabase(text, categoriaDb, tipoDb, dificuldade, subtarefas, autoApprove);
 
             btn.disabled = false;
             btn.innerText = oldText;
 
             if (inserted) {
-                const newTask = { id: inserted.id, text: inserted.quest, xp: inserted.xp, done: false };
+                const newTask = mapRowToTaskObj(inserted);
                 if (targetCatId) {
                     categories[targetCatId].tasks.push(newTask);
-                    categories[targetCatId].boxClaimed = false;
+                    if (autoApprove) categories[targetCatId].boxClaimed = false;
                 } else if (targetPerId) {
                     periodicQuests[targetPerId].list.push(newTask);
-                    periodicQuests[targetPerId].boxClaimed = false;
-                    updateBoxIcon(targetPerId, false);
+                    if (autoApprove) {
+                        periodicQuests[targetPerId].boxClaimed = false;
+                        updateBoxIcon(targetPerId, false);
+                    }
                 }
                 nameInput.value = '';
                 renderTabs();
                 renderPeriodicQuests();
+                if (isMasterUnlocked) loadMasterPendingQueue();
                 savePlayerToSupabase();
-                showSystemNotification(`Missão "${text}" registrada no Sistema!`, 'success');
+
+                if (autoApprove) {
+                    showSystemNotification(`Missão "${text}" (${dificuldade}: +${newTask.xp} XP) injetada!`, 'success');
+                } else {
+                    showSystemNotification(`Requisição enviada! Aguardando aprovação do Arquiteto.`, 'success');
+                }
             } else {
-                showSystemNotification(`Erro ao registrar missão no banco de dados.`, 'error');
+                showSystemNotification(`Erro ao registrar missão. Execute o script SQL de atualização no Supabase.`, 'error');
             }
         }
-
-        // Formulário Rápido dentro das abas de Categoria
-        DOM.form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const text = DOM.input.value.trim();
-            if (!text) return;
-
-            const btn = document.getElementById('quick-add-btn');
-            const newXp = 25;
-            const currentCat = categories[activeCategoryId];
-
-            btn.disabled = true;
-            btn.innerText = "...";
-            const inserted = await criarMissaoNoSupabase(text, currentCat.title, "Main Quest", newXp);
-            btn.disabled = false;
-            btn.innerText = "Add";
-
-            if (inserted) {
-                currentCat.tasks.push({ id: inserted.id, text: inserted.quest, xp: inserted.xp, done: false });
-                currentCat.boxClaimed = false;
-                DOM.input.value = '';
-                renderTabs();
-                renderCategory(activeCategoryId);
-                savePlayerToSupabase();
-                showSystemNotification(`Missão "${text}" adicionada!`, 'success');
-            } else {
-                showSystemNotification(`Falha ao salvar missão.`, 'error');
-            }
-        });
 
         function renderPeriodicQuests() {
             const renderList = (group, domElement, type) => {
@@ -1917,40 +2471,98 @@
 
         function createTaskElement(task, listType, categoryId = null) {
             const li = document.createElement('li');
-            li.className = `quest-item group flex items-start gap-3 p-2.5 rounded bg-gray-900 bg-opacity-40 border ${task.done ? 'completed border-gray-800 opacity-60' : 'border-blue-900 border-opacity-30 hover:border-blue-500'} transition-all`;
+            const isPending = !task.aprovada;
+            const isExtremeWithSubs = task.dificuldade === 'Extremo' && Array.isArray(task.subtarefas) && task.subtarefas.length > 0;
+            const diffCfg = DIFFICULTY_CONFIG[task.dificuldade || 'Fácil'] || DIFFICULTY_CONFIG['Fácil'];
+
+            let borderStyle = 'border-blue-900 border-opacity-30 hover:border-blue-500';
+            if (task.done) borderStyle = 'completed border-gray-800 opacity-60';
+            else if (task.isPenalty) borderStyle = 'border-red-600 bg-red-950 bg-opacity-30';
+            else if (isPending) borderStyle = 'border-yellow-700 border-dashed opacity-75';
+
+            li.className = `quest-item group flex flex-col gap-2 p-2.5 rounded bg-gray-900 bg-opacity-40 border ${borderStyle} transition-all`;
             
+            const topRow = document.createElement('div');
+            topRow.className = 'flex items-start gap-3 w-full';
+
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'quest-checkbox mt-0.5';
             checkbox.checked = Boolean(task.done);
+            // Bloqueia se já estiver concluída (One-Way Lock), se estiver Pendente de aprovação ou se for Extrema com subtarefas incompletas
+            checkbox.disabled = Boolean(task.done) || isPending || (isExtremeWithSubs && !task.subtarefas.every(s => s.done));
             checkbox.addEventListener('change', (e) => {
-                handleTaskToggle(task.id, e.target.checked, task.xp, listType, categoryId);
+                if (!e.target.checked) {
+                    e.target.checked = true;
+                    return;
+                }
+                handleTaskToggle(task.id, true, task.xp, listType, categoryId);
             });
 
-            const spanText = document.createElement('span');
-            spanText.className = 'task-text flex-grow text-blue-100 leading-tight';
-            spanText.textContent = task.text;
+            const spanText = document.createElement('div');
+            spanText.className = 'flex-grow leading-tight';
+            spanText.innerHTML = `
+                <span class="task-text ${task.isPenalty ? 'text-red-300 font-bold' : 'text-blue-100'}">${task.text}</span>
+                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${diffCfg.color}">${task.dificuldade || 'Fácil'}</span>
+                    ${isPending ? '<span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-yellow-600 text-yellow-400 bg-yellow-950">⏳ Aguardando Arquiteto</span>' : ''}
+                    ${task.done ? '<span class="text-[9px] uppercase font-bold text-gray-500">🔒 Concluída</span>' : ''}
+                </div>
+            `;
 
             const spanXp = document.createElement('span');
             spanXp.className = `text-[10px] font-bold ${task.done ? 'text-gray-600' : 'text-blue-400'} bg-black px-1.5 py-0.5 rounded border border-blue-900 flex-shrink-0`;
             spanXp.textContent = `+${task.xp} XP`;
 
-            const delBtn = document.createElement('button');
-            delBtn.className = 'text-xs text-gray-600 hover:text-red-400 opacity-40 group-hover:opacity-100 transition-opacity px-1';
-            delBtn.title = 'Excluir missão';
-            delBtn.innerText = '🗑️';
-            delBtn.onclick = () => deletarMissao(task.id, listType, categoryId);
+            topRow.appendChild(checkbox);
+            topRow.appendChild(spanText);
+            topRow.appendChild(spanXp);
 
-            li.appendChild(checkbox);
-            li.appendChild(spanText);
-            li.appendChild(spanXp);
-            li.appendChild(delBtn);
+            // Apenas o Master Admin pode excluir missões diretamente para evitar trapaças nas penalidades
+            if (isMasterUnlocked || isPending) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'text-xs text-gray-600 hover:text-red-400 opacity-40 group-hover:opacity-100 transition-opacity px-1';
+                delBtn.title = 'Excluir missão';
+                delBtn.innerText = '🗑️';
+                delBtn.onclick = () => deletarMissao(task.id, listType, categoryId);
+                topRow.appendChild(delBtn);
+            }
+
+            li.appendChild(topRow);
+
+            // Renderiza Subtarefas caso seja uma missão Extrema
+            if (isExtremeWithSubs) {
+                const subList = document.createElement('div');
+                subList.className = 'pl-7 pt-1 space-y-1.5 border-t border-gray-800 mt-1';
+                task.subtarefas.forEach((st, idx) => {
+                    const subRow = document.createElement('label');
+                    subRow.className = `flex items-center gap-2 text-xs ${st.done ? 'line-through text-gray-500' : 'text-gray-300'} ${isPending || st.done ? 'cursor-not-allowed' : 'cursor-pointer'}`;
+                    
+                    const subCheck = document.createElement('input');
+                    subCheck.type = 'checkbox';
+                    subCheck.className = 'w-3.5 h-3.5 accent-cyan-400';
+                    subCheck.checked = Boolean(st.done);
+                    subCheck.disabled = Boolean(st.done) || Boolean(task.done) || isPending;
+                    subCheck.addEventListener('change', () => {
+                        handleSubtaskToggle(task.id, idx, listType, categoryId);
+                    });
+
+                    const subSpan = document.createElement('span');
+                    subSpan.textContent = st.text;
+
+                    subRow.appendChild(subCheck);
+                    subRow.appendChild(subSpan);
+                    subList.appendChild(subRow);
+                });
+                li.appendChild(subList);
+            }
+
             return li;
         }
 
         /**
          * ==========================================
-         * SISTEMA DE TIMERS E RESET AUTOMÁTICO
+         * SISTEMA DE TIMERS, GERADOR E PENALIDADE
          * ==========================================
          */
         function getWeekNumber(d) {
@@ -1960,56 +2572,60 @@
             return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         }
 
-        async function resetPeriodicGroupInDb(typeKey) {
-            if (!currentUser) return;
-            const ids = periodicQuests[typeKey].list.map(t => t.id);
-            if (ids.length === 0) return;
-            await supabaseClient
-                .from('quests')
-                .update({ concluida: false })
-                .in('id', ids);
-        }
+        let isProcessingReset = false;
 
-        function checkPeriodicResets(now) {
-            let changed = false;
+        async function checkPeriodicResets(now) {
+            if (!currentUser || isProcessingReset) return;
             const currentDayStr = now.toDateString();
             const currentWeek = getWeekNumber(now);
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
 
-            if (resetTimestamps.daily !== currentDayStr) {
-                periodicQuests.daily.list.forEach(t => t.done = false);
-                periodicQuests.daily.boxClaimed = false;
-                resetTimestamps.daily = currentDayStr;
-                resetPeriodicGroupInDb('daily');
-                changed = true;
-            }
-            if (resetTimestamps.weekly !== currentWeek) {
-                periodicQuests.weekly.list.forEach(t => t.done = false);
-                periodicQuests.weekly.boxClaimed = false;
-                resetTimestamps.weekly = currentWeek;
-                resetPeriodicGroupInDb('weekly');
-                changed = true;
-            }
-            if (resetTimestamps.monthly !== currentMonth) {
-                periodicQuests.monthly.list.forEach(t => t.done = false);
-                periodicQuests.monthly.boxClaimed = false;
-                resetTimestamps.monthly = currentMonth;
-                resetPeriodicGroupInDb('monthly');
-                changed = true;
-            }
-            if (resetTimestamps.yearly !== currentYear) {
-                periodicQuests.yearly.list.forEach(t => t.done = false);
-                periodicQuests.yearly.boxClaimed = false;
-                resetTimestamps.yearly = currentYear;
-                resetPeriodicGroupInDb('yearly');
-                changed = true;
-            }
+            let changed = false;
+            isProcessingReset = true;
 
-            if (changed && currentUser) {
-                savePlayerToSupabase();
-                renderPeriodicQuests();
-                showSystemNotification('Reset temporal concluído. Missões periódicas reiniciadas!', 'success');
+            try {
+                // VIRADA DIÁRIA: Verifica falha nas Daily Quests e sorteia novas não-repetidas
+                if (resetTimestamps.daily !== currentDayStr) {
+                    const yesterdayDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
+                    const failedYesterday = yesterdayDailies.length > 0 && yesterdayDailies.some(t => !t.done);
+
+                    resetTimestamps.daily = currentDayStr;
+                    if (failedYesterday) {
+                        await applyDailyPenalty();
+                    }
+                    await generateRandomPeriodicQuests('daily');
+                    changed = true;
+                }
+
+                // VIRADA SEMANAL: Sorteia novas Weekly Quests não-repetidas
+                if (resetTimestamps.weekly !== currentWeek) {
+                    resetTimestamps.weekly = currentWeek;
+                    await generateRandomPeriodicQuests('weekly');
+                    changed = true;
+                }
+
+                if (resetTimestamps.monthly !== currentMonth) {
+                    resetTimestamps.monthly = currentMonth;
+                    periodicQuests.monthly.boxClaimed = false;
+                    changed = true;
+                }
+
+                if (resetTimestamps.yearly !== currentYear) {
+                    resetTimestamps.yearly = currentYear;
+                    periodicQuests.yearly.boxClaimed = false;
+                    changed = true;
+                }
+
+                if (changed) {
+                    await savePlayerToSupabase();
+                    updatePlayerUI();
+                    renderTabs();
+                    renderCategory(activeCategoryId);
+                    renderPeriodicQuests();
+                }
+            } finally {
+                isProcessingReset = false;
             }
         }
 
@@ -2020,7 +2636,9 @@
 
         function updateTimers() {
             const now = new Date();
-            checkPeriodicResets(now);
+            if (currentUser && resetTimestamps.daily !== now.toDateString()) {
+                checkPeriodicResets(now);
+            }
             
             const nextDay = new Date(now); nextDay.setHours(24, 0, 0, 0);
             document.getElementById('timer-daily').innerText = formatTimeDiff(nextDay - now);
