@@ -1,6 +1,6 @@
 {
-  "name": "System Window - Solo Leveling Life OS",
-  "short_name": "System OS",
+  "name": "Life OS",
+  "short_name": "Life OS",
   "description": "Sistema gamificado de evolução pessoal e missões diárias.",
   "start_url": "./index.html",
   "scope": "./",
@@ -10,13 +10,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "./icon.svg",
+      "src": "./icon.svg?v=2",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "./icon.svg",
+      "src": "./icon.svg?v=2",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any"
