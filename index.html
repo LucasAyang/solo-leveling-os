@@ -82,6 +82,22 @@
             cursor: not-allowed;
         }
 
+        /* TELA DE PENALIDADE ESTILO ANIME (QUEST INFO: SURVIVAL) */
+        .penalty-quest-window {
+            background: linear-gradient(180deg, rgba(12, 24, 28, 0.94) 0%, rgba(8, 14, 18, 0.97) 100%);
+            border: 1px solid rgba(94, 234, 212, 0.55);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(20, 184, 166, 0.25), inset 0 0 40px rgba(20, 184, 166, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .penalty-quest-header {
+            background: linear-gradient(90deg, rgba(20, 83, 95, 0.55) 0%, rgba(45, 140, 150, 0.35) 50%, rgba(20, 83, 95, 0.55) 100%);
+            border-top: 1px solid rgba(153, 246, 228, 0.6);
+            border-bottom: 1px solid rgba(153, 246, 228, 0.6);
+            box-shadow: 0 0 15px rgba(45, 212, 191, 0.25);
+        }
+
         .system-boot-out {
             animation: bootOut 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
@@ -123,7 +139,7 @@
 
         .quest-checkbox:disabled {
             cursor: not-allowed;
-            opacity: 0.75;
+            opacity: 0.7;
         }
 
         .quest-item.completed span.task-text {
@@ -136,7 +152,8 @@
         .text-glow { text-shadow: 0 0 8px rgba(0, 212, 255, 0.85); }
         .text-glow-purple { color: var(--sys-purple); text-shadow: 0 0 8px rgba(179, 136, 255, 0.8); }
         .text-glow-gold { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
-        .text-glow-red { color: #ff2a2a; text-shadow: 0 0 10px rgba(255, 42, 42, 0.9); }
+        .text-glow-red { color: #ff3b3b; text-shadow: 0 0 10px rgba(255, 59, 59, 0.9); }
+        .text-glow-green { color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.85); }
         .text-glow-god { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 0 30px rgba(0, 255, 255, 0.8); }
 
         .blink { animation: blinker 1.5s linear infinite; }
@@ -405,19 +422,61 @@
         </div>
     </div>
 
-    <!-- MODAL DE PENALIDADE (PENALTY ZONE) -->
-    <div id="penalty-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center backdrop-blur-md bg-red-950 bg-opacity-80 p-4">
-        <div class="bg-black border-2 border-red-600 shadow-[0_0_50px_rgba(255,0,0,0.6)] p-8 rounded-lg text-center max-w-md w-full flex flex-col items-center glitch-fx">
-            <div class="text-6xl mb-3">💀</div>
-            <h2 class="text-3xl font-black text-glow-red uppercase tracking-widest mb-2">ZONA DE PENALIDADE</h2>
-            <p class="text-sm text-red-200 mb-4" id="penalty-modal-desc">
-                Você falhou em completar todas as Daily Quests do ciclo anterior. O Sistema aplicou uma punição.
-            </p>
-            <div id="penalty-modal-details" class="w-full bg-red-950 bg-opacity-40 border border-red-700 rounded p-3 text-xs text-red-300 font-mono mb-6 text-left space-y-1">
+    <!-- TELA DE PENALIDADE FIEL AO ANIME (QUEST INFO - PENALTY QUEST: SURVIVAL) -->
+    <div id="penalty-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center backdrop-blur-lg bg-black bg-opacity-85 p-4 select-none">
+        <div id="penalty-window-box" class="penalty-quest-window max-w-md w-full rounded-sm flex flex-col items-center text-center animate-[popIn_0.4s_ease-out] border border-teal-400/60">
+            
+            <!-- Ornamento Superior -->
+            <div class="w-full pt-3 pb-1 text-teal-300/50 text-xs tracking-[0.5em] font-serif">
+                ༺ ❖ ༻
             </div>
-            <button onclick="document.getElementById('penalty-modal').classList.add('hidden')" class="px-8 py-2.5 border-2 border-red-500 text-red-300 hover:bg-red-800 hover:text-white uppercase font-bold tracking-widest rounded transition-all">
-                Aceitar Punição
-            </button>
+
+            <!-- Barra QUEST INFO -->
+            <div class="penalty-quest-header w-full py-3 px-6 flex items-center justify-center gap-3 mb-8">
+                <div class="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-xl shadow-[0_0_10px_#fff]">
+                    !
+                </div>
+                <h2 class="text-2xl md:text-3xl font-bold tracking-[0.2em] text-white uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">
+                    QUEST INFO
+                </h2>
+            </div>
+
+            <!-- Corpo da Janela de Penalidade -->
+            <div class="px-6 pb-8 w-full flex flex-col items-center space-y-6">
+                
+                <div class="text-xl md:text-2xl font-bold tracking-wider uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                    [PENALTY QUEST: <span class="text-glow-red">SURVIVAL</span>]
+                </div>
+
+                <div class="space-y-2">
+                    <div class="text-xl md:text-2xl font-bold uppercase tracking-widest text-glow-green">
+                        GOAL
+                    </div>
+                    <p class="text-lg md:text-xl font-semibold text-white uppercase tracking-wide leading-snug max-w-xs mx-auto">
+                        SURVIVE FOR THE ALLOTTED AMOUNT OF TIME.
+                    </p>
+                </div>
+
+                <!-- Detalhes Reais da Punição no Sistema -->
+                <div id="penalty-modal-details" class="w-full bg-black/60 border border-teal-500/40 rounded p-3 text-xs text-teal-100 font-mono text-left space-y-1.5 shadow-inner">
+                    <div>• Falha detectada nas Daily Quests do ciclo anterior.</div>
+                    <div>• Conclua a missão de sobrevivência na aba Daily Quests para restaurar seus acessos.</div>
+                </div>
+
+                <!-- Cronômetro Regressivo de 4 Horas (Igual ao Anime) -->
+                <div class="pt-2 space-y-1 font-bold uppercase tracking-wider">
+                    <div class="text-lg md:text-xl text-white">
+                        ALLOTTED TIME: <span class="text-teal-200">4 HOURS</span>
+                    </div>
+                    <div class="text-lg md:text-xl text-white">
+                        TIME LEFT: <span id="penalty-live-countdown" class="text-glow-red">3 HOURS, 59 MINUTES, 57 SECONDS</span>
+                    </div>
+                </div>
+
+                <button onclick="closePenaltyModal()" class="mt-4 px-10 py-2.5 border border-teal-400 bg-teal-950/60 hover:bg-teal-800/80 text-white uppercase font-bold tracking-[0.2em] rounded-sm transition-all shadow-[0_0_15px_rgba(45,212,191,0.3)]">
+                    ACEITAR DESTINO
+                </button>
+            </div>
         </div>
     </div>
 
@@ -463,7 +522,7 @@
         <!-- Fase 2: Revelação do Item -->
         <div id="lootbox-phase-2" class="hidden sys-modal p-8 rounded-lg text-center flex flex-col items-center max-w-md w-full border-4">
             <div id="loot-content-normal" class="w-full flex flex-col items-center">
-                <div id="loot-icon" class="text-7xl mb-4 loot-reveal">🛡️</div>
+                <div id="loot-icon" class="text-7xl mb-4 loot-reveal flex items-center justify-center">🛡️</div>
                 <div id="loot-rarity-label" class="text-xs uppercase tracking-widest font-bold mb-1">Raridade</div>
                 <h2 id="loot-name" class="text-2xl md:text-3xl font-bold uppercase tracking-wider mb-2 loot-reveal">Nome do Item</h2>
                 <p id="loot-stats" class="text-gray-300 text-sm mb-4">Poder: 0</p>
@@ -553,7 +612,7 @@
             
             <div class="p-4 flex-grow overflow-y-auto" id="content-container">
                 
-                <!-- Lista de Tarefas / Painel Admin / Ranking -->
+                <!-- Lista de Tarefas / Visão Geral / Painel Admin / Ranking -->
                 <ul id="category-task-list" class="space-y-2.5"></ul>
 
                 <!-- Container do Inventário -->
@@ -578,7 +637,7 @@
 
                         <div class="flex flex-col items-center justify-center relative w-24 md:w-32 h-64 md:h-80 mx-2">
                             <div class="absolute inset-0 bg-blue-500 opacity-15 blur-2xl rounded-full z-0"></div>
-                            <div id="character-avatar-container" class="text-7xl md:text-9xl filter drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] relative z-10 leading-none">
+                            <div id="character-avatar-container" class="text-7xl md:text-9xl filter drop-shadow-[0_0_15px_rgba(0,212,255,0.5)] relative z-10 leading-none flex items-center justify-center">
                                 🧍‍♂️
                             </div>
                         </div>
@@ -676,7 +735,7 @@
     </main>
 
     <footer class="text-center text-[10px] text-blue-900 opacity-60 mt-2">
-        System Integration Status: Supabase PostgreSQL Realtime Engine | Solo Leveling OS v6.0 Master Edition
+        System Integration Status: Supabase PostgreSQL Realtime Engine | Solo Leveling OS v6.5 Master Edition
     </footer>
 
     <script>
@@ -695,10 +754,92 @@
         const LEGACY_STORAGE_KEY = 'soloLevelingOS_Save_v4';
         const AWAKENING_SESSION_KEY = 'soloLevelingOS_Awakened_Session';
 
+        /**
+         * ==========================================
+         * MOTOR DE IMAGENS PERSONALIZADAS (ASSET REGISTRY)
+         * ==========================================
+         * Basta colar as URLs (ou caminhos locais, ex: "img/espada_divina.png") abaixo.
+         * Se deixar em branco (""), o sistema usa os ícones padrão automaticamente!
+         */
         const CONFIG_IMAGENS = {
-            personagem: "",
-            equipamentos: { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" }
+            // 1. Imagem do Personagem no Centro do Inventário
+            personagem: {
+                padrao: "", // Imagem padrão para todos os níveis
+                porRank: {  // Opcional: imagem evoluindo conforme o Rank do jogador!
+                    E: "", D: "", C: "", B: "", A: "", S: "", Nacional: "", Global: "", Monarca: ""
+                }
+            },
+
+            // 2. Imagem de Fundo da Tela de Penalidade (Opcional - ex: imagem da estátua/centopeia do anime)
+            fundoPenalidade: "",
+
+            // 3. Imagens Padrão para cada Slot de Equipamento (usadas caso a raridade específica abaixo esteja vazia)
+            equipamentosPadrao: {
+                capacete: "",
+                peitoral: "",
+                botas: "",
+                capa: "",
+                arma_principal: "",
+                arma_secundaria: ""
+            },
+
+            // 4. Imagens Específicas por Raridade e Slot (Para customizar cada equipamento de cada raridade!)
+            equipamentosPorRaridade: {
+                comum:     { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                incomum:   { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                raro:      { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                epico:     { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                lendario:  { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                mitico:    { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                exotico:   { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                divino:    { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                hack:      { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" },
+                break:     { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" }
+            }
         };
+
+        // Funções auxiliares que resolvem automaticamente a imagem do equipamento ou personagem
+        function resolveEquipmentImageUrl(item) {
+            if (!item) return "";
+            if (item.imageUrl) return item.imageUrl;
+            const rarityId = item.rarity?.id;
+            const slot = item.slot;
+            if (rarityId && slot && CONFIG_IMAGENS.equipamentosPorRaridade?.[rarityId]?.[slot]) {
+                return CONFIG_IMAGENS.equipamentosPorRaridade[rarityId][slot];
+            }
+            if (slot && CONFIG_IMAGENS.equipamentosPadrao?.[slot]) {
+                return CONFIG_IMAGENS.equipamentosPadrao[slot];
+            }
+            return "";
+        }
+
+        function renderEquipmentVisualHTML(item, sizeContext = 'slot') {
+            const imgUrl = resolveEquipmentImageUrl(item);
+            const hex = item?.rarity?.hex || '#00d4ff';
+            const icon = slotIcons[item?.slot] || '🛡️';
+
+            if (imgUrl) {
+                const sizeClasses = sizeContext === 'modal'
+                    ? 'w-24 h-24 md:w-28 md:h-28'
+                    : sizeContext === 'roulette'
+                        ? 'w-12 h-12'
+                        : 'w-12 h-12 md:w-14 md:h-14';
+                return `<img src="${imgUrl}" alt="${item.name || item.slot}" class="${sizeClasses} object-contain mb-1" style="filter: drop-shadow(0 0 8px ${hex})">`;
+            }
+
+            const textClasses = sizeContext === 'modal'
+                ? 'text-7xl'
+                : sizeContext === 'roulette'
+                    ? 'text-4xl mb-1'
+                    : 'text-3xl mb-1';
+            return `<div class="${textClasses}" style="filter: drop-shadow(0 0 6px ${hex})">${icon}</div>`;
+        }
+
+        function resolveCharacterAvatarUrl() {
+            const byRank = CONFIG_IMAGENS.personagem?.porRank?.[player.rank];
+            if (byRank) return byRank;
+            return CONFIG_IMAGENS.personagem?.padrao || "";
+        }
 
         /**
          * ==========================================
@@ -760,7 +901,7 @@
 
         const PENALTY_QUESTS_POOL = [
             '💀 [PENALIDADE] Zona de Sobrevivência: 50 Flexões + 50 Agachamentos + 1L de Água',
-            '💀 [PENALIDADE] Disciplina Forçada: 45 minutos de estudo/leitura focado com celular em outro cômodo',
+            '💀 [PENALIDADE] Disciplina Forçada: 45 minutos de estudo/leitura focado com celular longe',
             '💀 [PENALIDADE] Purificação Física: 35 minutos de caminhada rápida/corrida + zero açúcar hoje',
             '💀 [PENALIDADE] Ordem Absoluta: Faxina completa no quarto/mesa + 30 Polichinelos'
         ];
@@ -774,6 +915,8 @@
         let authMode = 'login';
         let isMasterUnlocked = false;
         let preselectedCategoryForRequest = null;
+        let collapsedCompletedState = {}; // Controla o recolhimento das missões concluídas por aba
+        let penaltyEndTime = null;        // Controla o timer de 4 horas da tela de penalidade
 
         let player = {
             username: "Caçador",
@@ -799,7 +942,8 @@
             yearly: new Date().getFullYear(),
             last_daily_codes: [],
             last_weekly_codes: [],
-            locked_category: null
+            locked_category: null,
+            penalty_end_time: null
         };
 
         const ranks = { 1: "E", 15: "D", 30: "C", 50: "B", 75: "A", 100: "S", 150: "Nacional", 200: "Global", 250: "Monarca" };
@@ -817,9 +961,10 @@
             'financeiro': { 5: 'Mercador', 20: 'Barão', 50: 'Magnata', 80: 'Soberano Econômico', 100: 'Rei de Ouro' }
         };
 
-        let activeCategoryId = 'saude';
+        let activeCategoryId = 'geral';
 
         const categories = {
+            'geral': { title: 'Visão Geral', icon: '🌐', isSystem: true, isOverview: true },
             'saude': { title: 'Saúde', icon: '⚕️', type: 'category', tasks: [], boxClaimed: false },
             'estudo': { title: 'Estudo', icon: '📚', type: 'category', tasks: [], boxClaimed: false },
             'trabalho': { title: 'Trabalho', icon: '💼', type: 'category', tasks: [], boxClaimed: false },
@@ -1014,9 +1159,51 @@
 
         /**
          * ==========================================
-         * GERADOR DE HÁBITOS E SISTEMA DE PENALIDADE
+         * GERADOR DE HÁBITOS E TELA DE PENALIDADE (4 HORAS)
          * ==========================================
          */
+        function openPenaltyModalUI(detailsArray = null) {
+            const modal = document.getElementById('penalty-modal');
+            const box = document.getElementById('penalty-window-box');
+            const detailsEl = document.getElementById('penalty-modal-details');
+
+            if (CONFIG_IMAGENS.fundoPenalidade) {
+                box.style.backgroundImage = `linear-gradient(180deg, rgba(10, 20, 24, 0.88) 0%, rgba(5, 10, 14, 0.94) 100%), url('${CONFIG_IMAGENS.fundoPenalidade}')`;
+                box.style.backgroundSize = 'cover';
+                box.style.backgroundPosition = 'center';
+            }
+
+            if (!resetTimestamps.penalty_end_time || resetTimestamps.penalty_end_time <= Date.now()) {
+                // Inicia 4 horas (14.400.000 ms) de sobrevivência
+                resetTimestamps.penalty_end_time = Date.now() + (4 * 60 * 60 * 1000) - 2000;
+            }
+            penaltyEndTime = resetTimestamps.penalty_end_time;
+
+            if (detailsEl && Array.isArray(detailsArray) && detailsArray.length > 0) {
+                detailsEl.innerHTML = detailsArray.map(p => `<div>${p}</div>`).join('');
+            }
+
+            updatePenaltyCountdownDisplay();
+            modal.classList.remove('hidden');
+        }
+
+        function closePenaltyModal() {
+            document.getElementById('penalty-modal').classList.add('hidden');
+        }
+
+        function updatePenaltyCountdownDisplay() {
+            const el = document.getElementById('penalty-live-countdown');
+            if (!el) return;
+            const target = penaltyEndTime || resetTimestamps.penalty_end_time || (Date.now() + 14397000);
+            const diff = Math.max(0, target - Date.now());
+
+            const h = Math.floor(diff / (1000 * 60 * 60));
+            const m = Math.floor((diff / (1000 * 60)) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+
+            el.innerText = `${h} HOURS, ${m} MINUTES, ${s} SECONDS`;
+        }
+
         async function generateRandomPeriodicQuests(periodType) {
             if (!currentUser) return;
             const isDaily = periodType === 'daily';
@@ -1025,11 +1212,9 @@
             const lastCodesKey = isDaily ? 'last_daily_codes' : 'last_weekly_codes';
             const lastCodes = Array.isArray(resetTimestamps[lastCodesKey]) ? resetTimestamps[lastCodesKey] : [];
 
-            // Filtra para NUNCA repetir as missões do dia/semana anterior
             let available = pool.filter(item => !lastCodes.includes(item.code));
             if (available.length < count) available = [...pool];
 
-            // Embaralha aleatoriamente para cada jogador
             for (let i = available.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [available[i], available[j]] = [available[j], available[i]];
@@ -1038,7 +1223,6 @@
             const selected = available.slice(0, count);
             resetTimestamps[lastCodesKey] = selected.map(s => s.code);
 
-            // Remove as missões antigas desse período no banco
             const oldIds = periodicQuests[periodType].list
                 .filter(t => !t.isPenalty)
                 .map(t => t.id);
@@ -1047,7 +1231,6 @@
                 await supabaseClient.from('quests').delete().in('id', oldIds);
             }
 
-            // Insere as novas missões sorteadas já aprovadas pelo Sistema
             const newRows = selected.map(s => ({
                 user_id: currentUser.id,
                 username: player.username,
@@ -1080,7 +1263,7 @@
             const xpLoss = Math.max(40, Math.floor(player.xp * 0.35));
             if (player.xp >= xpLoss) {
                 player.xp -= xpLoss;
-                penaltiesApplied.push(`• Dreno de Energia: -${xpLoss} EXP`);
+                penaltiesApplied.push(`• Dreno de Energia por Falha Diária: -${xpLoss} EXP`);
             } else if (player.level > 1) {
                 player.level--;
                 player.xp = 0;
@@ -1094,6 +1277,7 @@
             const mainCatKeys = Object.keys(categories).filter(k => !categories[k].isSystem);
             const randomCatKey = mainCatKeys[Math.floor(Math.random() * mainCatKeys.length)];
             resetTimestamps.locked_category = randomCatKey;
+            resetTimestamps.penalty_end_time = Date.now() + (4 * 60 * 60 * 1000);
             penaltiesApplied.push(`• Categoria Bloqueada: [${categories[randomCatKey].title}] 🔒`);
 
             // 3. Injeção da Missão de Sobrevivência (Penalidade)
@@ -1114,14 +1298,9 @@
             if (penRow) {
                 periodicQuests.daily.list.unshift(mapRowToTaskObj(penRow));
             }
-            penaltiesApplied.push(`• Missão de Sobrevivência injetada nas Daily Quests!`);
+            penaltiesApplied.push(`• Missão: "${penaltyText}" adicionada às Daily Quests!`);
 
-            // Exibe Modal de Penalidade
-            const detailsEl = document.getElementById('penalty-modal-details');
-            if (detailsEl) {
-                detailsEl.innerHTML = penaltiesApplied.map(p => `<div>${p}</div>`).join('');
-            }
-            document.getElementById('penalty-modal').classList.remove('hidden');
+            openPenaltyModalUI(penaltiesApplied);
         }
 
         /**
@@ -1261,7 +1440,6 @@
                     }
                 });
 
-                // Se o jogador ainda não tiver Daily ou Weekly quests geradas, gera automaticamente!
                 let generatedNew = false;
                 if (periodicQuests.daily.list.filter(t => !t.isPenalty).length === 0) {
                     await generateRandomPeriodicQuests('daily');
@@ -1273,8 +1451,16 @@
                 }
                 if (generatedNew) await savePlayerToSupabase();
 
-                // Verifica se há virada de dia/semana pendente
                 await checkPeriodicResets(new Date());
+
+                // Se houver missão de penalidade ativa ainda não concluída ao abrir o jogo, mostra a janela de aviso!
+                if (periodicQuests.daily.list.some(t => t.isPenalty && !t.done)) {
+                    openPenaltyModalUI([
+                        `• Você possui uma [PENALTY QUEST: SURVIVAL] ativa!`,
+                        `• Categoria Bloqueada: [${categories[resetTimestamps.locked_category]?.title || 'Nenhuma'}] 🔒`,
+                        `• Conclua a missão de sobrevivência na aba Daily Quests para liberar seus acessos.`
+                    ]);
+                }
 
                 updatePlayerUI();
                 recalcPower();
@@ -1379,7 +1565,7 @@
 
             if (listType === 'category' && categories[categoryId]) {
                 categories[categoryId].tasks = categories[categoryId].tasks.filter(t => t.id !== taskId);
-                renderCategory(categoryId);
+                renderCategory(activeCategoryId);
             } else if (periodicQuests[listType]) {
                 periodicQuests[listType].list = periodicQuests[listType].list.filter(t => t.id !== taskId);
                 renderPeriodicQuests();
@@ -1478,6 +1664,12 @@
             renderCategory('admin');
         }
 
+        function jumpToCategory(catKey) {
+            activeCategoryId = catKey;
+            renderTabs();
+            renderCategory(catKey);
+        }
+
         /**
          * ==========================================
          * SISTEMA DE LOOT & ROLETA CS:GO
@@ -1574,7 +1766,6 @@
             phase1.classList.add('hidden');
             phaseRoulette.classList.remove('hidden');
 
-            // Gera 45 itens para a fita da roleta; o índice 38 é o item vencedor
             const WINNING_INDEX = 38;
             const TOTAL_CARDS = 45;
             track.innerHTML = '';
@@ -1587,21 +1778,20 @@
                 card.className = `roulette-card border-2 ${item.rarity.borderClass}`;
                 card.style.boxShadow = `inset 0 0 12px ${item.rarity.hex}33`;
                 card.innerHTML = `
-                    <div class="text-4xl mb-1" style="filter: drop-shadow(0 0 6px ${item.rarity.hex})">${slotIcons[item.slot]}</div>
+                    ${renderEquipmentVisualHTML(item, 'roulette')}
                     <div class="text-[10px] font-bold uppercase ${item.rarity.colorClass} truncate w-full text-center">${item.rarity.name}</div>
                     <div class="text-[9px] text-gray-400 uppercase truncate w-full text-center">${item.slotName}</div>
                 `;
                 track.appendChild(card);
             }
 
-            // Força reflow antes de disparar a animação CSS
             void track.offsetWidth;
 
             const cardWidth = 112;
             const gap = 8;
-            const step = cardWidth + gap; // 120px por card
+            const step = cardWidth + gap;
             const viewportWidth = viewport.clientWidth || 600;
-            const jitter = Math.floor(Math.random() * 50) - 25; // Parada orgânica dentro do card vencedor
+            const jitter = Math.floor(Math.random() * 50) - 25;
             const targetOffset = (WINNING_INDEX * step) + (cardWidth / 2) - (viewportWidth / 2) + jitter;
 
             track.style.transition = 'transform 5.2s cubic-bezier(0.08, 0.82, 0.17, 1)';
@@ -1634,7 +1824,7 @@
                 const statsEl = document.getElementById('loot-stats');
                 const actionMsg = document.getElementById('loot-action-msg');
                 
-                iconEl.innerText = slotIcons[item.slot];
+                iconEl.innerHTML = renderEquipmentVisualHTML(item, 'modal');
                 rarityEl.innerText = item.rarity.name;
                 rarityEl.className = `text-xs uppercase tracking-widest font-bold mb-1 ${item.rarity.colorClass}`;
                 
@@ -1697,7 +1887,7 @@
                 power += Math.floor(Math.random() * (rarity.basePower * 0.5));
             }
 
-            return {
+            const itemObj = {
                 id: 'eq_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
                 slot: slot,
                 slotName: slot.replace('_', ' '),
@@ -1705,8 +1895,10 @@
                 tier: tier,
                 power: power,
                 name: rarity.isGod ? rarity.name : `${rarity.name} ${slot.replace('_', ' ')}`,
-                imageUrl: null 
+                imageUrl: null
             };
+            itemObj.imageUrl = resolveEquipmentImageUrl(itemObj) || null;
+            return itemObj;
         }
 
         function recalcPower() {
@@ -1729,7 +1921,7 @@
 
         /**
          * ==========================================
-         * UI RENDERING & LOGIC (TRAVA ONE-WAY E SUBTAREFAS)
+         * UI RENDERING & LOGIC (VISÃO GERAL E ACORDEÃO DE CONCLUÍDAS)
          * ==========================================
          */
         const DOM = {
@@ -1772,7 +1964,6 @@
             DOM.xpBar.style.width = `${percent}%`;
         }
 
-        // TRAVA DEFINITIVA: Uma vez concluída, não pode ser desmarcada!
         async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null) {
             let task;
             if (listType === 'category') {
@@ -1783,7 +1974,6 @@
 
             if (!task || task.done || !isDone || !task.aprovada) return;
 
-            // Se for Extrema, verifica se todas as subtarefas foram concluídas
             if (task.dificuldade === 'Extremo' && task.subtarefas && task.subtarefas.length > 0) {
                 if (!task.subtarefas.every(st => st.done)) {
                     showSystemNotification('Conclua todas as subtarefas antes de finalizar uma missão Extrema!', 'error');
@@ -1798,10 +1988,10 @@
                 categoryTallies[categoryId]++;
             }
 
-            // Se concluiu uma Missão de Penalidade, desbloqueia a categoria punida!
-            if (task.isPenalty && resetTimestamps.locked_category) {
+            if (task.isPenalty) {
                 const unlockedCat = categories[resetTimestamps.locked_category]?.title || 'Categoria';
                 resetTimestamps.locked_category = null;
+                resetTimestamps.penalty_end_time = null;
                 showSystemNotification(`Penalidade cumprida! Acesso à categoria [${unlockedCat}] restaurado!`, 'success');
             }
 
@@ -1811,12 +2001,8 @@
 
             updatePlayerUI();
             renderTabs();
-
-            if (listType === 'category') {
-                if (activeCategoryId === categoryId) renderCategory(categoryId);
-            } else {
-                renderPeriodicQuests();
-            }
+            renderCategory(activeCategoryId);
+            renderPeriodicQuests();
 
             await atualizarMissaoNoSupabase(task.id, { concluida: true, subtarefas: task.subtarefas || [] });
             await savePlayerToSupabase();
@@ -1831,17 +2017,16 @@
             }
 
             if (!task || task.done || !task.aprovada || !task.subtarefas?.[subIdx]) return;
-            if (task.subtarefas[subIdx].done) return; // Trava one-way na subtarefa
+            if (task.subtarefas[subIdx].done) return;
 
             task.subtarefas[subIdx].done = true;
 
-            // Se todas as subtarefas foram concluídas, completa a missão Extrema automaticamente!
             if (task.subtarefas.every(st => st.done)) {
                 showSystemNotification(`Todas as etapas concluídas! Missão Extrema finalizada (+${task.xp} XP)!`, 'success');
                 await handleTaskToggle(taskId, true, task.xp, listType, categoryId);
             } else {
-                if (listType === 'category') renderCategory(categoryId);
-                else renderPeriodicQuests();
+                renderCategory(activeCategoryId);
+                renderPeriodicQuests();
                 await atualizarMissaoNoSupabase(task.id, { subtarefas: task.subtarefas });
             }
         }
@@ -1900,15 +2085,31 @@
             if (player.xp >= player.maxXp) setTimeout(processLevelUp, 400); 
         }
 
+        function getTotalActiveTasksCount() {
+            let total = 0;
+            Object.keys(categories).forEach(k => {
+                if (!categories[k].isSystem) {
+                    total += categories[k].tasks.filter(t => !t.done && t.aprovada).length;
+                }
+            });
+            return total;
+        }
+
         function renderTabs() {
             DOM.tabs.innerHTML = '';
             for (const [key, data] of Object.entries(categories)) {
                 const btn = document.createElement('button');
                 const isActive = key === activeCategoryId;
                 const isLocked = resetTimestamps.locked_category === key;
-                const taskCount = !data.isSystem ? data.tasks.filter(t => !t.done && t.aprovada).length : null;
                 
-                btn.className = `tab-btn w-full text-left px-4 py-3 text-sm flex items-center justify-between ${isLocked ? 'text-red-500 opacity-75' : 'text-gray-400 hover:text-blue-200'} ${isActive ? 'active' : ''} ${key === 'ranking' ? 'mt-2 border-t border-gray-800 text-yellow-300' : ''}`;
+                let taskCount = null;
+                if (data.isOverview) {
+                    taskCount = getTotalActiveTasksCount();
+                } else if (!data.isSystem) {
+                    taskCount = data.tasks.filter(t => !t.done && t.aprovada).length;
+                }
+                
+                btn.className = `tab-btn w-full text-left px-4 py-3 text-sm flex items-center justify-between ${isLocked ? 'text-red-500 opacity-75' : 'text-gray-400 hover:text-blue-200'} ${isActive ? 'active' : ''} ${key === 'geral' ? 'border-b border-blue-900/50 text-cyan-300' : ''} ${key === 'ranking' ? 'mt-2 border-t border-gray-800 text-yellow-300' : ''}`;
                 btn.innerHTML = `
                     <div class="flex items-center gap-3">
                         <span class="text-lg">${isLocked ? '🔒' : data.icon}</span> 
@@ -1925,6 +2126,94 @@
             }
         }
 
+        function toggleCompletedAccordion(sectionKey) {
+            const current = collapsedCompletedState[sectionKey] !== undefined ? collapsedCompletedState[sectionKey] : true;
+            collapsedCompletedState[sectionKey] = !current;
+            renderCategory(activeCategoryId);
+        }
+
+        function createCompletedAccordionElement(completedTasks, sectionKey, isReadOnlyOverview = false) {
+            const isCollapsed = collapsedCompletedState[sectionKey] !== undefined ? collapsedCompletedState[sectionKey] : true;
+            const wrapper = document.createElement('li');
+            wrapper.className = 'pt-4 mt-4 border-t border-blue-900/40 list-none';
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.onclick = () => toggleCompletedAccordion(sectionKey);
+            toggleBtn.className = 'w-full flex items-center justify-between px-3 py-2 rounded bg-black/50 border border-gray-800 hover:border-blue-800 text-xs text-gray-400 hover:text-blue-300 uppercase tracking-wider font-bold transition-all';
+            toggleBtn.innerHTML = `
+                <span class="flex items-center gap-2">
+                    <span>${isCollapsed ? '▶' : '▼'}</span>
+                    <span>Missões Concluídas (${completedTasks.length})</span>
+                </span>
+                <span class="text-[10px] text-gray-500 font-mono">${isCollapsed ? 'Clique para mostrar' : 'Clique para recolher'}</span>
+            `;
+            wrapper.appendChild(toggleBtn);
+
+            if (!isCollapsed) {
+                const subUl = document.createElement('ul');
+                subUl.className = 'space-y-2 mt-2 pl-1';
+                completedTasks.forEach(item => {
+                    const catId = item._catKey || sectionKey;
+                    const badge = isReadOnlyOverview ? `${categories[catId]?.icon || ''} ${categories[catId]?.title || ''}` : null;
+                    subUl.appendChild(createTaskElement(item, 'category', catId, isReadOnlyOverview, badge));
+                });
+                wrapper.appendChild(subUl);
+            }
+
+            return wrapper;
+        }
+
+        function renderGeneralOverview() {
+            DOM.catBadge.innerText = 'Somente Visualização';
+            DOM.headerRequestBtn.classList.remove('hidden');
+
+            const allActive = [];
+            const allCompleted = [];
+
+            Object.keys(categories).forEach(catKey => {
+                const cat = categories[catKey];
+                if (!cat.isSystem) {
+                    cat.tasks.forEach(t => {
+                        const copy = { ...t, _catKey: catKey };
+                        if (t.done) allCompleted.push(copy);
+                        else allActive.push(copy);
+                    });
+                }
+            });
+
+            // Aviso informativo do Modo Somente Visualização
+            const infoBanner = document.createElement('li');
+            infoBanner.className = 'p-3 rounded bg-blue-950/30 border border-cyan-800/50 text-xs text-cyan-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-2';
+            infoBanner.innerHTML = `
+                <div>
+                    <span class="font-bold uppercase text-cyan-400">🌐 Painel Geral de Monitoramento:</span>
+                    Visualize todas as suas missões ativas em um só lugar. Para concluir uma missão, acesse a categoria específica dela.
+                </div>
+                <div class="text-[11px] font-mono text-gray-400 flex-shrink-0">
+                    Ativas: <b class="text-white">${allActive.length}</b> | Concluídas: <b class="text-green-400">${allCompleted.length}</b>
+                </div>
+            `;
+            DOM.catList.appendChild(infoBanner);
+
+            if (allActive.length === 0) {
+                const emptyLi = document.createElement('li');
+                emptyLi.className = 'text-center text-gray-500 py-8 text-sm italic';
+                emptyLi.innerText = 'Nenhuma missão pendente em nenhuma categoria no momento.';
+                DOM.catList.appendChild(emptyLi);
+            } else {
+                allActive.forEach(task => {
+                    const cat = categories[task._catKey];
+                    const badgeLabel = `${cat.icon} ${cat.title}`;
+                    DOM.catList.appendChild(createTaskElement(task, 'category', task._catKey, true, badgeLabel));
+                });
+            }
+
+            if (allCompleted.length > 0) {
+                DOM.catList.appendChild(createCompletedAccordionElement(allCompleted, 'geral', true));
+            }
+        }
+
         function renderCategory(categoryId) {
             const cat = categories[categoryId];
             DOM.catTitle.innerText = `${cat.icon} ${cat.title}`;
@@ -1934,13 +2223,16 @@
             DOM.inventoryContainer.classList.add('hidden');
             DOM.catBadge.innerText = cat.isSystem ? 'System Menu' : 'Main Quest';
 
-            if (cat.isSystem) {
+            if (cat.isSystem && !cat.isOverview) {
                 DOM.headerRequestBtn.classList.add('hidden');
             } else {
                 DOM.headerRequestBtn.classList.remove('hidden');
             }
 
-            if (categoryId === 'admin') {
+            if (categoryId === 'geral') {
+                renderGeneralOverview();
+                return;
+            } else if (categoryId === 'admin') {
                 renderAdminPanel();
                 return;
             } else if (categoryId === 'inventario') {
@@ -1971,14 +2263,29 @@
                 return;
             }
 
-            if (cat.tasks.length === 0) {
+            const activeTasks = cat.tasks.filter(t => !t.done);
+            const completedTasks = cat.tasks.filter(t => t.done);
+
+            if (activeTasks.length === 0 && completedTasks.length === 0) {
                 DOM.catList.innerHTML = `<li class="text-center text-gray-500 py-8 text-sm italic">Nenhuma missão nesta categoria. Clique em "+ Solicitar Missão" acima para adicionar.</li>`;
                 return;
             }
 
-            cat.tasks.forEach(task => {
-                DOM.catList.appendChild(createTaskElement(task, 'category', categoryId));
-            });
+            if (activeTasks.length === 0) {
+                const doneMsg = document.createElement('li');
+                doneMsg.className = 'text-center text-cyan-400/70 py-6 text-sm italic border border-dashed border-cyan-900/40 rounded';
+                doneMsg.innerText = '✨ Todas as missões ativas desta categoria foram concluídas!';
+                DOM.catList.appendChild(doneMsg);
+            } else {
+                activeTasks.forEach(task => {
+                    DOM.catList.appendChild(createTaskElement(task, 'category', categoryId, false, null));
+                });
+            }
+
+            // Seção recolhível para missões concluídas (evita poluir a lista)
+            if (completedTasks.length > 0) {
+                DOM.catList.appendChild(createCompletedAccordionElement(completedTasks, categoryId, false));
+            }
         }
 
         /**
@@ -2071,9 +2378,10 @@
 
         function renderInventory() {
             const charContainer = document.getElementById('character-avatar-container');
+            const avatarUrl = resolveCharacterAvatarUrl();
             if (charContainer) {
-                if (CONFIG_IMAGENS.personagem !== "") {
-                    charContainer.innerHTML = `<img src="${CONFIG_IMAGENS.personagem}" alt="Personagem" class="max-w-full max-h-full object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.5)]" />`;
+                if (avatarUrl !== "") {
+                    charContainer.innerHTML = `<img src="${avatarUrl}" alt="Personagem" class="max-w-full max-h-full object-contain drop-shadow-[0_0_15px_rgba(0,212,255,0.5)]" />`;
                     charContainer.classList.remove('text-7xl', 'md:text-9xl'); 
                 } else {
                     charContainer.innerHTML = `🧍‍♂️`; 
@@ -2084,23 +2392,19 @@
             equipSlots.forEach(slot => {
                 const eq = player.equipment[slot];
                 const slotEl = document.getElementById(`slot-${slot}`);
-                const customImgUrl = (eq && eq.imageUrl) ? eq.imageUrl : CONFIG_IMAGENS.equipamentos[slot];
+                const defaultSlotImg = CONFIG_IMAGENS.equipamentosPadrao?.[slot] || "";
 
                 if (eq) {
                     const tierTxt = eq.rarity.isGod ? '' : `T${eq.tier}`;
-                    const visualElement = customImgUrl 
-                        ? `<img src="${customImgUrl}" alt="${slot}" class="w-12 h-12 md:w-14 md:h-14 object-contain mb-1 filter drop-shadow-[0_0_5px_${eq.rarity.hex}]">` 
-                        : `<div class="text-3xl mb-1 filter drop-shadow-[0_0_5px_${eq.rarity.hex}]">${slotIcons[slot]}</div>`;
-
                     slotEl.innerHTML = `
-                        ${visualElement}
+                        ${renderEquipmentVisualHTML(eq, 'slot')}
                         <div class="text-[10px] font-bold uppercase ${eq.rarity.colorClass} truncate w-full text-center px-1">${eq.rarity.name} ${tierTxt}</div>
                     `;
                     slotEl.className = `equip-slot filled w-20 h-20 md:w-24 md:h-24 rounded flex flex-col items-center justify-center cursor-help border-2 ${eq.rarity.borderClass}`;
                     slotEl.title = `${eq.name}\nPoder: ${eq.power}\nRaridade: ${eq.rarity.name}`;
                 } else {
-                    const visualElement = customImgUrl 
-                        ? `<img src="${customImgUrl}" alt="${slot}" class="w-12 h-12 md:w-14 md:h-14 object-contain opacity-30 grayscale filter drop-shadow-[0_0_5px_rgba(255,255,255,0.2)]">` 
+                    const visualElement = defaultSlotImg 
+                        ? `<img src="${defaultSlotImg}" alt="${slot}" class="w-12 h-12 md:w-14 md:h-14 object-contain opacity-25 grayscale">` 
                         : `<span class="text-gray-600 opacity-30 text-2xl">${slotIcons[slot]}</span>`;
 
                     slotEl.innerHTML = visualElement;
@@ -2121,7 +2425,7 @@
 
             DOM.catList.innerHTML = `
                 <div class="space-y-6 text-sm">
-                    <!-- 1. Solicitação de Nova Missão (Aberta a todos os jogadores, sem escolher XP) -->
+                    <!-- 1. Solicitação de Nova Missão -->
                     <div class="bg-black bg-opacity-50 p-4 rounded border border-blue-900 border-opacity-50">
                         <div class="flex justify-between items-center border-b border-blue-900 pb-2 mb-4">
                             <h3 class="text-blue-400 font-bold uppercase tracking-wider">
@@ -2204,7 +2508,7 @@
                         `}
                     </div>
 
-                    <!-- 3. Configurações de Conta -->
+                    <!-- 3. Configurações de Conta e Testes Visuais -->
                     <div class="bg-black bg-opacity-50 p-4 rounded border border-gray-800 space-y-4">
                         <div>
                             <label class="block text-gray-400 text-xs mb-2 uppercase">Identidade do Caçador no Ranking</label>
@@ -2223,6 +2527,9 @@
                             <div class="flex flex-wrap gap-2 w-full md:w-auto">
                                 <button onclick="syncAllFromSupabase(true)" class="flex-1 md:flex-initial px-3 py-2 border border-cyan-600 text-cyan-400 hover:bg-cyan-950 rounded text-xs uppercase font-bold">
                                     🔄 Sincronizar
+                                </button>
+                                <button onclick="openPenaltyModalUI()" class="flex-1 md:flex-initial px-3 py-2 border border-red-600 text-red-400 hover:bg-red-950 rounded text-xs uppercase font-bold">
+                                    💀 Ver Tela de Penalidade
                                 </button>
                                 <button onclick="triggerAwakeningScreenManual()" class="flex-1 md:flex-initial px-3 py-2 border border-purple-600 text-purple-400 hover:bg-purple-950 rounded text-xs uppercase font-bold">
                                     ⚡ Tela Inicial
@@ -2326,7 +2633,7 @@
                     `;
                 }).join('');
             } catch (err) {
-                queueEl.innerHTML = `<div class="text-xs text-red-400">Erro ao carregar fila. Verifique se executou o comando SQL de atualização no Supabase.</div>`;
+                queueEl.innerHTML = `<div class="text-xs text-red-400">Erro ao carregar fila.</div>`;
             }
         }
 
@@ -2446,7 +2753,7 @@
                     showSystemNotification(`Requisição enviada! Aguardando aprovação do Arquiteto.`, 'success');
                 }
             } else {
-                showSystemNotification(`Erro ao registrar missão. Execute o script SQL de atualização no Supabase.`, 'error');
+                showSystemNotification(`Erro ao registrar missão.`, 'error');
             }
         }
 
@@ -2469,7 +2776,7 @@
             renderList(periodicQuests.yearly, document.getElementById('yearly-list'), 'yearly');
         }
 
-        function createTaskElement(task, listType, categoryId = null) {
+        function createTaskElement(task, listType, categoryId = null, isReadOnlyOverview = false, categoryBadgeLabel = null) {
             const li = document.createElement('li');
             const isPending = !task.aprovada;
             const isExtremeWithSubs = task.dificuldade === 'Extremo' && Array.isArray(task.subtarefas) && task.subtarefas.length > 0;
@@ -2489,8 +2796,10 @@
             checkbox.type = 'checkbox';
             checkbox.className = 'quest-checkbox mt-0.5';
             checkbox.checked = Boolean(task.done);
-            // Bloqueia se já estiver concluída (One-Way Lock), se estiver Pendente de aprovação ou se for Extrema com subtarefas incompletas
-            checkbox.disabled = Boolean(task.done) || isPending || (isExtremeWithSubs && !task.subtarefas.every(s => s.done));
+            checkbox.disabled = Boolean(task.done) || isPending || isReadOnlyOverview || (isExtremeWithSubs && !task.subtarefas.every(s => s.done));
+            if (isReadOnlyOverview && !task.done) {
+                checkbox.title = "Modo Visualização: Clique em 'Ir ➔' para abrir a categoria e concluir a missão.";
+            }
             checkbox.addEventListener('change', (e) => {
                 if (!e.target.checked) {
                     e.target.checked = true;
@@ -2504,6 +2813,7 @@
             spanText.innerHTML = `
                 <span class="task-text ${task.isPenalty ? 'text-red-300 font-bold' : 'text-blue-100'}">${task.text}</span>
                 <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                    ${categoryBadgeLabel ? `<span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-blue-950 text-cyan-300 border border-blue-800">${categoryBadgeLabel}</span>` : ''}
                     <span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${diffCfg.color}">${task.dificuldade || 'Fácil'}</span>
                     ${isPending ? '<span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-yellow-600 text-yellow-400 bg-yellow-950">⏳ Aguardando Arquiteto</span>' : ''}
                     ${task.done ? '<span class="text-[9px] uppercase font-bold text-gray-500">🔒 Concluída</span>' : ''}
@@ -2518,8 +2828,17 @@
             topRow.appendChild(spanText);
             topRow.appendChild(spanXp);
 
-            // Apenas o Master Admin pode excluir missões diretamente para evitar trapaças nas penalidades
-            if (isMasterUnlocked || isPending) {
+            if (isReadOnlyOverview && categoryId && !task.done) {
+                const goBtn = document.createElement('button');
+                goBtn.type = 'button';
+                goBtn.className = 'text-[10px] text-cyan-400 hover:text-white border border-cyan-800 hover:bg-cyan-900 px-2 py-0.5 rounded uppercase font-bold flex-shrink-0 transition-all';
+                goBtn.innerText = 'Ir ➔';
+                goBtn.title = 'Ir para a categoria desta missão';
+                goBtn.onclick = () => jumpToCategory(categoryId);
+                topRow.appendChild(goBtn);
+            }
+
+            if ((isMasterUnlocked || isPending) && !isReadOnlyOverview) {
                 const delBtn = document.createElement('button');
                 delBtn.className = 'text-xs text-gray-600 hover:text-red-400 opacity-40 group-hover:opacity-100 transition-opacity px-1';
                 delBtn.title = 'Excluir missão';
@@ -2536,13 +2855,13 @@
                 subList.className = 'pl-7 pt-1 space-y-1.5 border-t border-gray-800 mt-1';
                 task.subtarefas.forEach((st, idx) => {
                     const subRow = document.createElement('label');
-                    subRow.className = `flex items-center gap-2 text-xs ${st.done ? 'line-through text-gray-500' : 'text-gray-300'} ${isPending || st.done ? 'cursor-not-allowed' : 'cursor-pointer'}`;
+                    subRow.className = `flex items-center gap-2 text-xs ${st.done ? 'line-through text-gray-500' : 'text-gray-300'} ${isPending || st.done || isReadOnlyOverview ? 'cursor-not-allowed' : 'cursor-pointer'}`;
                     
                     const subCheck = document.createElement('input');
                     subCheck.type = 'checkbox';
                     subCheck.className = 'w-3.5 h-3.5 accent-cyan-400';
                     subCheck.checked = Boolean(st.done);
-                    subCheck.disabled = Boolean(st.done) || Boolean(task.done) || isPending;
+                    subCheck.disabled = Boolean(st.done) || Boolean(task.done) || isPending || isReadOnlyOverview;
                     subCheck.addEventListener('change', () => {
                         handleSubtaskToggle(task.id, idx, listType, categoryId);
                     });
@@ -2585,7 +2904,6 @@
             isProcessingReset = true;
 
             try {
-                // VIRADA DIÁRIA: Verifica falha nas Daily Quests e sorteia novas não-repetidas
                 if (resetTimestamps.daily !== currentDayStr) {
                     const yesterdayDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
                     const failedYesterday = yesterdayDailies.length > 0 && yesterdayDailies.some(t => !t.done);
@@ -2598,7 +2916,6 @@
                     changed = true;
                 }
 
-                // VIRADA SEMANAL: Sorteia novas Weekly Quests não-repetidas
                 if (resetTimestamps.weekly !== currentWeek) {
                     resetTimestamps.weekly = currentWeek;
                     await generateRandomPeriodicQuests('weekly');
@@ -2639,6 +2956,9 @@
             if (currentUser && resetTimestamps.daily !== now.toDateString()) {
                 checkPeriodicResets(now);
             }
+
+            // Atualiza também o cronômetro ao vivo da janela de Penalidade (4 Horas)
+            updatePenaltyCountdownDisplay();
             
             const nextDay = new Date(now); nextDay.setHours(24, 0, 0, 0);
             document.getElementById('timer-daily').innerText = formatTimeDiff(nextDay - now);
