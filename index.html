@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Window - Life OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -71,11 +72,15 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.15), inset 0 0 10px rgba(0, 212, 255, 0.1);
             transition: all 0.2s ease;
         }
-        .awakening-btn:hover {
+        .awakening-btn:hover:not(:disabled) {
             background: rgba(0, 212, 255, 0.25);
             border-color: #fff;
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), inset 0 0 15px rgba(0, 212, 255, 0.3);
-            transform: scale(1.04);
+            transform: scale(1.03);
+        }
+        .awakening-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .system-boot-out {
@@ -242,39 +247,81 @@
 </head>
 <body class="min-h-screen flex flex-col p-2 md:p-4 gap-4">
 
-    <!-- TELA INICIAL DE DESPERTAR / LOGIN (NOTIFICATION) -->
+    <!-- TELA INICIAL DE DESPERTAR & AUTENTICAÇÃO (SOLO LEVELING NOTIFICATION) -->
     <div id="awakening-screen" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#02050a] bg-opacity-95 backdrop-blur-xl p-4 select-none">
         <div id="awakening-box" class="awakening-window max-w-lg w-full p-6 md:p-10 flex flex-col items-center text-center animate-[popIn_0.5s_ease-out]">
             
             <!-- Header: [!] [NOTIFICATION] -->
-            <div class="flex items-center justify-center gap-3 w-full mb-8">
-                <div class="w-12 h-12 border border-cyan-400 flex items-center justify-center shadow-[0_0_12px_rgba(0,212,255,0.4),inset_0_0_10px_rgba(0,212,255,0.2)]">
-                    <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-xl text-glow">!</div>
+            <div class="flex items-center justify-center gap-3 w-full mb-6">
+                <div class="w-11 h-11 border border-cyan-400 flex items-center justify-center shadow-[0_0_12px_rgba(0,212,255,0.4),inset_0_0_10px_rgba(0,212,255,0.2)]">
+                    <div class="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-lg text-glow">!</div>
                 </div>
-                <div class="border border-cyan-400 px-6 md:px-10 py-2 shadow-[0_0_12px_rgba(0,212,255,0.4),inset_0_0_10px_rgba(0,212,255,0.2)]">
-                    <h2 class="text-2xl md:text-3xl font-bold tracking-[0.25em] text-white text-glow uppercase">NOTIFICATION</h2>
+                <div class="border border-cyan-400 px-6 md:px-10 py-1.5 shadow-[0_0_12px_rgba(0,212,255,0.4),inset_0_0_10px_rgba(0,212,255,0.2)]">
+                    <h2 id="awakening-header-title" class="text-xl md:text-2xl font-bold tracking-[0.25em] text-white text-glow uppercase">NOTIFICATION</h2>
                 </div>
             </div>
 
-            <!-- Mensagem Central -->
-            <div class="space-y-3 text-lg md:text-xl text-cyan-100 tracking-wide font-medium mb-10 text-left md:text-center leading-relaxed">
-                <p>Your heart will stop in <span id="awakening-timer" class="text-glow-red font-bold">0.02 seconds</span></p>
-                <p>if you choose not to accept.</p>
-                <p class="pt-2 text-white text-glow font-semibold">Will you accept?</p>
-                <p id="awakening-warning" class="hidden text-xs text-red-400 uppercase tracking-widest pt-2 blink font-bold">
-                    [ ERRO: O JOGADOR NÃO PODE RECUSAR O CONVITE DO SISTEMA ]
+            <!-- ETAPA 1: CONVITE DO SISTEMA -->
+            <div id="awakening-step-invite" class="w-full">
+                <div class="space-y-3 text-lg md:text-xl text-cyan-100 tracking-wide font-medium mb-10 text-center leading-relaxed">
+                    <p>Your heart will stop in <span id="awakening-timer" class="text-glow-red font-bold">0.02 seconds</span></p>
+                    <p>if you choose not to accept.</p>
+                    <p class="pt-2 text-white text-glow font-semibold">Will you accept?</p>
+                    <p id="awakening-warning" class="hidden text-xs text-red-400 uppercase tracking-widest pt-2 blink font-bold">
+                        [ ERRO: O JOGADOR NÃO PODE RECUSAR O CONVITE DO SISTEMA ]
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-center gap-8 md:gap-14 w-full">
+                    <button onclick="acceptAwakening()" class="awakening-btn px-8 py-2.5 text-xl font-bold text-white tracking-widest uppercase min-w-[110px] text-glow">
+                        Yes
+                    </button>
+                    <button id="awakening-no-btn" onclick="rejectAwakening()" class="awakening-btn px-8 py-2.5 text-xl font-bold text-gray-300 tracking-widest uppercase min-w-[110px]">
+                        No
+                    </button>
+                </div>
+            </div>
+
+            <!-- ETAPA 2: LOGIN / REGISTRO DE CAÇADOR (SUPABASE AUTH) -->
+            <div id="awakening-step-auth" class="hidden w-full text-left">
+                <p class="text-center text-cyan-200 text-sm mb-4 tracking-wider uppercase">
+                    Identifique-se para sincronizar seu Status com o Servidor Central
                 </p>
+
+                <!-- Alternador Login / Cadastro -->
+                <div class="flex border-b border-cyan-900 mb-5">
+                    <button id="tab-auth-login" onclick="switchAuthMode('login')" class="w-1/2 py-2 text-center font-bold uppercase tracking-widest text-sm border-b-2 border-cyan-400 text-white text-glow">
+                        Login
+                    </button>
+                    <button id="tab-auth-register" onclick="switchAuthMode('register')" class="w-1/2 py-2 text-center font-bold uppercase tracking-widest text-sm border-b-2 border-transparent text-gray-500 hover:text-cyan-200">
+                        Novo Caçador
+                    </button>
+                </div>
+
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                    <div id="auth-username-group" class="hidden">
+                        <label class="block text-xs text-cyan-300 uppercase tracking-wider mb-1">Nome do Caçador (Aparecerá no Ranking)</label>
+                        <input type="text" id="auth-username" placeholder="Ex: Lucas" class="w-full bg-black bg-opacity-70 border border-cyan-700 rounded px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-cyan-300 uppercase tracking-wider mb-1">E-mail</label>
+                        <input type="email" id="auth-email" required placeholder="cacador@sistema.com" class="w-full bg-black bg-opacity-70 border border-cyan-700 rounded px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-cyan-300 uppercase tracking-wider mb-1">Senha</label>
+                        <input type="password" id="auth-password" required minlength="6" placeholder="••••••" class="w-full bg-black bg-opacity-70 border border-cyan-700 rounded px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    </div>
+
+                    <p id="auth-error-msg" class="hidden text-xs text-red-400 font-bold text-center py-1"></p>
+
+                    <button type="submit" id="auth-submit-btn" class="awakening-btn w-full py-3 text-lg font-bold text-white tracking-widest uppercase text-glow mt-2">
+                        Acessar Sistema
+                    </button>
+                </form>
             </div>
 
-            <!-- Botões: Yes / No -->
-            <div class="flex items-center justify-center gap-8 md:gap-14 w-full">
-                <button onclick="acceptAwakening()" class="awakening-btn px-8 py-2.5 text-xl font-bold text-white tracking-widest uppercase min-w-[110px] text-glow">
-                    Yes
-                </button>
-                <button id="awakening-no-btn" onclick="rejectAwakening()" class="awakening-btn px-8 py-2.5 text-xl font-bold text-gray-300 tracking-widest uppercase min-w-[110px]">
-                    No
-                </button>
-            </div>
         </div>
     </div>
 
@@ -344,14 +391,14 @@
                     <span class="text-2xl font-bold text-glow" id="player-level">L1</span>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-glow uppercase tracking-wider">Player: Lucas</h1>
+                    <h1 class="text-2xl font-bold text-glow uppercase tracking-wider" id="player-name-display">Player: ---</h1>
                     <div class="text-sm text-blue-300 opacity-80" id="player-rank">Classe: Nenhuma | Rank: E</div>
                 </div>
             </div>
-            <!-- Status do Notion Mobile/Desktop -->
+            <!-- Status do Supabase Cloud -->
             <div class="flex items-center gap-2 px-3 py-1 rounded bg-black bg-opacity-50 border border-gray-800 text-xs">
                 <span id="sync-led" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
-                <span id="sync-text" class="text-gray-400 font-mono">Sincronizando...</span>
+                <span id="sync-text" class="text-gray-400 font-mono">Conectando...</span>
             </div>
         </div>
 
@@ -379,14 +426,14 @@
         <aside class="sys-panel w-full md:w-64 flex-shrink-0 flex flex-col overflow-y-auto max-h-[30vh] md:max-h-full">
             <div class="p-3 border-b border-blue-900 border-opacity-50 text-sm font-bold text-blue-400 uppercase tracking-widest bg-black bg-opacity-30 flex justify-between items-center">
                 <span>Menu do Sistema</span>
-                <button onclick="carregarMissoesDoNotion(true)" title="Sincronizar com Notion" class="text-xs text-cyan-400 hover:text-white transition-all">🔄</button>
+                <button onclick="syncAllFromSupabase(true)" title="Sincronizar com Nuvem" class="text-xs text-cyan-400 hover:text-white transition-all">🔄</button>
             </div>
             <nav id="category-tabs" class="flex flex-col py-2">
                 <!-- Abas geradas via JS -->
             </nav>
         </aside>
 
-        <!-- Coluna 2: Conteúdo Principal (Quests ou Inventário) -->
+        <!-- Coluna 2: Conteúdo Principal (Quests, Ranking, Admin ou Inventário) -->
         <section class="sys-panel flex-grow flex flex-col min-h-[45vh] md:min-h-full" id="main-content-area">
             <!-- Header Dinâmico -->
             <header class="p-4 border-b border-blue-900 border-opacity-50 flex justify-between items-center bg-black bg-opacity-30">
@@ -398,7 +445,7 @@
                 </span>
             </header>
             
-            <!-- Container Dinâmico: Tasks, Admin ou Inventário -->
+            <!-- Container Dinâmico -->
             <div class="p-4 flex-grow overflow-y-auto" id="content-container">
                 
                 <!-- Formulário Quick Add Task -->
@@ -409,7 +456,7 @@
                     </button>
                 </form>
 
-                <!-- Lista de Tarefas -->
+                <!-- Lista de Tarefas / Painel Admin / Ranking -->
                 <ul id="category-task-list" class="space-y-2"></ul>
 
                 <!-- Container do Inventário (Oculto por padrão) -->
@@ -535,92 +582,41 @@
     </main>
 
     <footer class="text-center text-[10px] text-blue-900 opacity-60 mt-2">
-        System Integration Status: Notion Cloud Sync + Local Cache | Solo Leveling OS v4.2
+        System Integration Status: Supabase PostgreSQL Realtime Engine | Solo Leveling OS v5.0 Multiplayer
     </footer>
 
     <script>
         /**
          * ==========================================
-         * CONFIGURAÇÕES GERAIS E WEBHOOK
+         * CONFIGURAÇÃO DO SUPABASE
          * ==========================================
          */
-        const WEBHOOK_URL = 'https://hook.us2.make.com/u7qxqhn3jr8fgah4h9y5rh8zjzwtx4hw';
-        const STORAGE_KEY = 'soloLevelingOS_Save_v4';
+        const SUPABASE_URL = 'https://wfcxmhwncrgbfokirttu.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_Na62n57oBXv5_YKkj8VfJQ_O7Sh1n2m';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const LEGACY_STORAGE_KEY = 'soloLevelingOS_Save_v4';
         const AWAKENING_SESSION_KEY = 'soloLevelingOS_Awakened_Session';
 
         const CONFIG_IMAGENS = {
-            personagem: "", // URL da imagem do personagem
+            personagem: "",
             equipamentos: { capacete: "", peitoral: "", botas: "", capa: "", arma_principal: "", arma_secundaria: "" }
         };
-
-        /**
-         * ==========================================
-         * TELA DE LOGIN / DESPERTAR DO SISTEMA
-         * ==========================================
-         */
-        function checkAwakeningScreen() {
-            const screen = document.getElementById('awakening-screen');
-            if (!screen) return;
-            if (sessionStorage.getItem(AWAKENING_SESSION_KEY) === 'true') {
-                screen.classList.add('hidden');
-            }
-        }
-
-        function acceptAwakening() {
-            const screen = document.getElementById('awakening-screen');
-            const box = document.getElementById('awakening-box');
-            sessionStorage.setItem(AWAKENING_SESSION_KEY, 'true');
-            
-            box.classList.add('system-boot-out');
-            setTimeout(() => {
-                screen.classList.add('hidden');
-                box.classList.remove('system-boot-out');
-                showSystemNotification('Bem-vindo, Jogador Lucas. O Sistema foi inicializado.', 'success');
-            }, 420);
-        }
-
-        function rejectAwakening() {
-            const box = document.getElementById('awakening-box');
-            const warning = document.getElementById('awakening-warning');
-            const timer = document.getElementById('awakening-timer');
-            const noBtn = document.getElementById('awakening-no-btn');
-
-            box.classList.add('glitch-fx');
-            warning.classList.remove('hidden');
-            timer.innerText = "0.01 seconds";
-            noBtn.innerText = "Yes";
-            noBtn.onclick = acceptAwakening;
-            noBtn.classList.add('text-glow', 'text-white');
-
-            setTimeout(() => {
-                box.classList.remove('glitch-fx');
-            }, 600);
-        }
-
-        function triggerAwakeningScreenManual() {
-            sessionStorage.removeItem(AWAKENING_SESSION_KEY);
-            const screen = document.getElementById('awakening-screen');
-            const warning = document.getElementById('awakening-warning');
-            const timer = document.getElementById('awakening-timer');
-            const noBtn = document.getElementById('awakening-no-btn');
-
-            warning.classList.add('hidden');
-            timer.innerText = "0.02 seconds";
-            noBtn.innerText = "No";
-            noBtn.onclick = rejectAwakening;
-            noBtn.classList.remove('text-glow', 'text-white');
-            screen.classList.remove('hidden');
-        }
 
         /**
          * ==========================================
          * STATE DO JOGO E DADOS
          * ==========================================
          */
+        let currentUser = null;
+        let authMode = 'login';
+
         let player = {
+            username: "Caçador",
             level: 1,
             xp: 0,
-            maxXp: 200, 
+            maxXp: 200,
+            power: 0,
             rank: "E",
             playerClass: "Nenhuma",
             equipment: { capacete: null, peitoral: null, botas: null, capa: null, arma_principal: null, arma_secundaria: null }
@@ -656,7 +652,6 @@
 
         let activeCategoryId = 'saude';
 
-        // Categorias alinhadas 100% com o Notion
         const categories = {
             'saude': { title: 'Saúde', icon: '⚕️', type: 'category', tasks: [], boxClaimed: false },
             'estudo': { title: 'Estudo', icon: '📚', type: 'category', tasks: [], boxClaimed: false },
@@ -668,8 +663,9 @@
             'familia': { title: 'Família', icon: '❤️', type: 'category', tasks: [], boxClaimed: false },
             'amigos': { title: 'Amigos', icon: '🤝', type: 'category', tasks: [], boxClaimed: false },
             'financeiro': { title: 'Financeiro', icon: '💰', type: 'category', tasks: [], boxClaimed: false },
-            'admin': { title: 'Administração', icon: '⚙️', isSystem: true },
-            'inventario': { title: 'Inventário', icon: '🎒', isSystem: true }
+            'ranking': { title: 'Ranking', icon: '🏆', isSystem: true },
+            'inventario': { title: 'Inventário', icon: '🎒', isSystem: true },
+            'admin': { title: 'Administração', icon: '⚙️', isSystem: true }
         };
 
         const periodicQuests = {
@@ -681,7 +677,448 @@
 
         /**
          * ==========================================
-         * NOTIFICAÇÕES E STATUS DE SINCRONIZAÇÃO
+         * TELA DE DESPERTAR & AUTENTICAÇÃO SUPABASE
+         * ==========================================
+         */
+        async function checkInitialAuthAndAwakening() {
+            const screen = document.getElementById('awakening-screen');
+            const { data: { session } } = await supabaseClient.auth.getSession();
+
+            if (session && session.user) {
+                currentUser = session.user;
+                await syncAllFromSupabase(false);
+
+                // Se já aceitou a notificação nesta sessão de navegador, entra direto
+                if (sessionStorage.getItem(AWAKENING_SESSION_KEY) === 'true') {
+                    screen.classList.add('hidden');
+                }
+            } else {
+                setSyncStatus('offline');
+            }
+        }
+
+        async function acceptAwakening() {
+            const screen = document.getElementById('awakening-screen');
+            const box = document.getElementById('awakening-box');
+            const stepInvite = document.getElementById('awakening-step-invite');
+            const stepAuth = document.getElementById('awakening-step-auth');
+            const headerTitle = document.getElementById('awakening-header-title');
+
+            sessionStorage.setItem(AWAKENING_SESSION_KEY, 'true');
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+                currentUser = session.user;
+                box.classList.add('system-boot-out');
+                setTimeout(async () => {
+                    screen.classList.add('hidden');
+                    box.classList.remove('system-boot-out');
+                    await syncAllFromSupabase(false);
+                    showSystemNotification(`Bem-vindo de volta, Caçador ${player.username}.`, 'success');
+                }, 420);
+            } else {
+                // Transiciona para a tela de Login / Registro de Caçador
+                headerTitle.innerText = "HUNTER ACCESS";
+                stepInvite.classList.add('hidden');
+                stepAuth.classList.remove('hidden');
+            }
+        }
+
+        function rejectAwakening() {
+            const box = document.getElementById('awakening-box');
+            const warning = document.getElementById('awakening-warning');
+            const timer = document.getElementById('awakening-timer');
+            const noBtn = document.getElementById('awakening-no-btn');
+
+            box.classList.add('glitch-fx');
+            warning.classList.remove('hidden');
+            timer.innerText = "0.01 seconds";
+            noBtn.innerText = "Yes";
+            noBtn.onclick = acceptAwakening;
+            noBtn.classList.add('text-glow', 'text-white');
+
+            setTimeout(() => box.classList.remove('glitch-fx'), 600);
+        }
+
+        function switchAuthMode(mode) {
+            authMode = mode;
+            const tabLogin = document.getElementById('tab-auth-login');
+            const tabRegister = document.getElementById('tab-auth-register');
+            const usernameGroup = document.getElementById('auth-username-group');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const errorMsg = document.getElementById('auth-error-msg');
+
+            errorMsg.classList.add('hidden');
+
+            if (mode === 'login') {
+                tabLogin.className = "w-1/2 py-2 text-center font-bold uppercase tracking-widest text-sm border-b-2 border-cyan-400 text-white text-glow";
+                tabRegister.className = "w-1/2 py-2 text-center font-bold uppercase tracking-widest text-sm border-b-2 border-transparent text-gray-500 hover:text-cyan-200";
+                usernameGroup.classList.add('hidden');
+                submitBtn.innerText = "Acessar Sistema";
+            } else {
+                tabRegister.className = "w-1/2 py-2 text-center font-bold uppercase tracking-widest text-sm border-b-2 border-cyan-400 text-white text-glow";
+                tabLogin.className = "w-1/2 py-2 text-center font-bold uppercase tracking-widest text-sm border-b-2 border-transparent text-gray-500 hover:text-cyan-200";
+                usernameGroup.classList.remove('hidden');
+                submitBtn.innerText = "Despertar Caçador";
+            }
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const usernameInput = document.getElementById('auth-username').value.trim();
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const errorMsg = document.getElementById('auth-error-msg');
+
+            errorMsg.classList.add('hidden');
+            submitBtn.disabled = true;
+            const oldBtnText = submitBtn.innerText;
+            submitBtn.innerText = "Sincronizando...";
+
+            try {
+                if (authMode === 'register') {
+                    if (!usernameInput) throw new Error("Escolha um Nome de Caçador para o Ranking.");
+                    
+                    const { data, error } = await supabaseClient.auth.signUp({
+                        email,
+                        password,
+                        options: { data: { username: usernameInput } }
+                    });
+
+                    if (error) throw error;
+
+                    if (data.user && !data.session) {
+                        throw new Error("Conta criada! Desative a opção 'Confirm Email' no painel Authentication -> Providers -> Email do Supabase para logar direto.");
+                    }
+
+                    currentUser = data.user;
+                    await ensurePlayerProfile(usernameInput);
+                } else {
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    currentUser = data.user;
+                    await ensurePlayerProfile();
+                }
+
+                await syncAllFromSupabase(false);
+
+                const screen = document.getElementById('awakening-screen');
+                const box = document.getElementById('awakening-box');
+                box.classList.add('system-boot-out');
+                setTimeout(() => {
+                    screen.classList.add('hidden');
+                    box.classList.remove('system-boot-out');
+                    showSystemNotification(`Acesso liberado. Bem-vindo, ${player.username}!`, 'success');
+                }, 420);
+
+            } catch (err) {
+                console.error("Erro de autenticação:", err);
+                errorMsg.innerText = err.message || "Falha na autenticação. Verifique seus dados.";
+                errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = oldBtnText;
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            sessionStorage.removeItem(AWAKENING_SESSION_KEY);
+            location.reload();
+        }
+
+        function triggerAwakeningScreenManual() {
+            const screen = document.getElementById('awakening-screen');
+            const stepInvite = document.getElementById('awakening-step-invite');
+            const stepAuth = document.getElementById('awakening-step-auth');
+            const warning = document.getElementById('awakening-warning');
+            const timer = document.getElementById('awakening-timer');
+            const noBtn = document.getElementById('awakening-no-btn');
+            const headerTitle = document.getElementById('awakening-header-title');
+
+            headerTitle.innerText = "NOTIFICATION";
+            stepAuth.classList.add('hidden');
+            stepInvite.classList.remove('hidden');
+            warning.classList.add('hidden');
+            timer.innerText = "0.02 seconds";
+            noBtn.innerText = "No";
+            noBtn.onclick = rejectAwakening;
+            noBtn.classList.remove('text-glow', 'text-white');
+            screen.classList.remove('hidden');
+        }
+
+        /**
+         * ==========================================
+         * BANCO DE DADOS SUPABASE (PLAYERS & QUESTS)
+         * ==========================================
+         */
+        function getBoxesClaimedObject() {
+            const boxes = {
+                daily: periodicQuests.daily.boxClaimed,
+                weekly: periodicQuests.weekly.boxClaimed,
+                monthly: periodicQuests.monthly.boxClaimed,
+                yearly: periodicQuests.yearly.boxClaimed
+            };
+            Object.keys(categories).forEach(k => {
+                if (!categories[k].isSystem) boxes[k] = categories[k].boxClaimed;
+            });
+            return boxes;
+        }
+
+        function applyBoxesClaimedObject(boxes) {
+            if (!boxes || typeof boxes !== 'object') return;
+            ['daily', 'weekly', 'monthly', 'yearly'].forEach(t => {
+                if (boxes[t] !== undefined) periodicQuests[t].boxClaimed = Boolean(boxes[t]);
+            });
+            Object.keys(categories).forEach(k => {
+                if (!categories[k].isSystem && boxes[k] !== undefined) {
+                    categories[k].boxClaimed = Boolean(boxes[k]);
+                }
+            });
+        }
+
+        // Cria o perfil na tabela players caso seja o primeiro login (e migra dados locais antigos se existirem)
+        async function ensurePlayerProfile(preferredUsername = null) {
+            if (!currentUser) return;
+
+            const { data: existing, error: fetchErr } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+
+            if (existing) return existing;
+
+            // Verifica se existe save antigo no navegador para migrar para a nuvem
+            let initialPlayer = { ...player };
+            let initialTallies = { ...categoryTallies };
+            let initialResets = { ...resetTimestamps };
+
+            const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+            if (legacyRaw) {
+                try {
+                    const parsed = JSON.parse(legacyRaw);
+                    if (parsed.player) initialPlayer = { ...initialPlayer, ...parsed.player };
+                    if (parsed.categoryTallies) initialTallies = { ...initialTallies, ...parsed.categoryTallies };
+                } catch (e) {}
+            }
+
+            const finalUsername = preferredUsername 
+                || currentUser.user_metadata?.username 
+                || currentUser.email?.split('@')[0] 
+                || 'Caçador';
+
+            let totalPower = 0;
+            Object.values(initialPlayer.equipment || {}).forEach(eq => { if (eq) totalPower += eq.power; });
+
+            const newProfile = {
+                id: currentUser.id,
+                username: finalUsername,
+                level: initialPlayer.level || 1,
+                xp: Math.floor(initialPlayer.xp || 0),
+                max_xp: initialPlayer.maxXp || 200,
+                power: totalPower,
+                rank: initialPlayer.rank || 'E',
+                player_class: initialPlayer.playerClass || 'Nenhuma',
+                equipment: initialPlayer.equipment || player.equipment,
+                category_tallies: initialTallies,
+                reset_timestamps: initialResets,
+                boxes_claimed: getBoxesClaimedObject()
+            };
+
+            const { data: inserted, error: insertErr } = await supabaseClient
+                .from('players')
+                .insert([newProfile])
+                .select()
+                .single();
+
+            if (insertErr) console.error("Erro ao criar perfil inicial:", insertErr);
+            return inserted || newProfile;
+        }
+
+        async function syncAllFromSupabase(isManual = false) {
+            if (!currentUser) return;
+            setSyncStatus('syncing');
+
+            try {
+                const profile = await ensurePlayerProfile();
+                if (profile) {
+                    player.username = profile.username || 'Caçador';
+                    player.level = profile.level ?? 1;
+                    player.xp = profile.xp ?? 0;
+                    player.maxXp = profile.max_xp ?? 200;
+                    player.power = profile.power ?? 0;
+                    player.rank = profile.rank || 'E';
+                    player.playerClass = profile.player_class || 'Nenhuma';
+                    player.equipment = profile.equipment || { capacete: null, peitoral: null, botas: null, capa: null, arma_principal: null, arma_secundaria: null };
+
+                    if (profile.category_tallies) categoryTallies = { ...categoryTallies, ...profile.category_tallies };
+                    if (profile.reset_timestamps && Object.keys(profile.reset_timestamps).length > 0) {
+                        resetTimestamps = { ...resetTimestamps, ...profile.reset_timestamps };
+                    }
+                    if (profile.boxes_claimed) applyBoxesClaimedObject(profile.boxes_claimed);
+                }
+
+                // Busca todas as missões do jogador logado
+                const { data: questsData, error: questsErr } = await supabaseClient
+                    .from('quests')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: true });
+
+                if (questsErr) throw questsErr;
+
+                Object.keys(categories).forEach(k => { if (!categories[k].isSystem) categories[k].tasks = []; });
+                Object.keys(periodicQuests).forEach(k => { periodicQuests[k].list = []; });
+
+                (questsData || []).forEach(row => {
+                    if (!row.quest || !String(row.quest).trim()) return;
+
+                    const taskObj = {
+                        id: row.id,
+                        text: String(row.quest).trim(),
+                        xp: row.xp ?? 20,
+                        done: Boolean(row.concluida)
+                    };
+
+                    const normTipo = normalizeStr(row.tipo);
+                    if (normTipo.includes('daily') || normTipo.includes('diaria')) {
+                        periodicQuests.daily.list.push(taskObj);
+                    } else if (normTipo.includes('weekly') || normTipo.includes('semanal')) {
+                        periodicQuests.weekly.list.push(taskObj);
+                    } else if (normTipo.includes('monthly') || normTipo.includes('mensal')) {
+                        periodicQuests.monthly.list.push(taskObj);
+                    } else if (normTipo.includes('yearly') || normTipo.includes('anual')) {
+                        periodicQuests.yearly.list.push(taskObj);
+                    } else {
+                        const matchedCatId = matchCategoryKey(row.categoria);
+                        categories[matchedCatId].tasks.push(taskObj);
+                    }
+                });
+
+                updatePlayerUI();
+                recalcPower();
+                renderTabs();
+                renderCategory(activeCategoryId);
+                renderPeriodicQuests();
+                setSyncStatus('online');
+
+                if (isManual) showSystemNotification('Sincronização com o Supabase concluída!', 'success');
+            } catch (err) {
+                console.error("Erro ao sincronizar com Supabase:", err);
+                setSyncStatus('offline');
+                if (isManual) showSystemNotification('Erro ao comunicar com o servidor.', 'error');
+            }
+        }
+
+        async function savePlayerToSupabase() {
+            if (!currentUser) return;
+            setSyncStatus('syncing');
+
+            let totalPower = 0;
+            Object.values(player.equipment).forEach(eq => { if (eq) totalPower += eq.power; });
+            player.power = totalPower;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('players')
+                    .update({
+                        username: player.username,
+                        level: player.level,
+                        xp: Math.floor(player.xp),
+                        max_xp: player.maxXp,
+                        power: totalPower,
+                        rank: player.rank,
+                        player_class: player.playerClass,
+                        equipment: player.equipment,
+                        category_tallies: categoryTallies,
+                        reset_timestamps: resetTimestamps,
+                        boxes_claimed: getBoxesClaimedObject(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUser.id);
+
+                if (error) throw error;
+                setSyncStatus('online');
+            } catch (err) {
+                console.error("Falha ao salvar perfil no Supabase:", err);
+                setSyncStatus('offline');
+            }
+        }
+
+        async function criarMissaoNoSupabase(text, categoriaTitle, tipoTitle, xp) {
+            if (!currentUser) return null;
+            setSyncStatus('syncing');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('quests')
+                    .insert([{
+                        user_id: currentUser.id,
+                        quest: text,
+                        categoria: categoriaTitle,
+                        tipo: tipoTitle,
+                        xp: xp,
+                        concluida: false
+                    }])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                setSyncStatus('online');
+                return data;
+            } catch (err) {
+                console.error("Erro ao criar missão no Supabase:", err);
+                setSyncStatus('offline');
+                return null;
+            }
+        }
+
+        async function atualizarStatusNoSupabase(taskId, isDone) {
+            if (!currentUser) return;
+            try {
+                await supabaseClient
+                    .from('quests')
+                    .update({ concluida: isDone })
+                    .eq('id', taskId)
+                    .eq('user_id', currentUser.id);
+            } catch (err) {
+                console.warn("Erro ao atualizar status da missão:", err);
+            }
+        }
+
+        async function deletarMissao(taskId, listType, categoryId = null) {
+            if (!currentUser) return;
+            setSyncStatus('syncing');
+
+            if (listType === 'category' && categories[categoryId]) {
+                categories[categoryId].tasks = categories[categoryId].tasks.filter(t => t.id !== taskId);
+                renderCategory(categoryId);
+            } else if (periodicQuests[listType]) {
+                periodicQuests[listType].list = periodicQuests[listType].list.filter(t => t.id !== taskId);
+                renderPeriodicQuests();
+            }
+            renderTabs();
+
+            try {
+                const { error } = await supabaseClient
+                    .from('quests')
+                    .delete()
+                    .eq('id', taskId)
+                    .eq('user_id', currentUser.id);
+
+                if (error) throw error;
+                setSyncStatus('online');
+                showSystemNotification('Missão removida do Sistema.', 'success');
+            } catch (err) {
+                console.error("Erro ao excluir missão:", err);
+                setSyncStatus('offline');
+            }
+        }
+
+        /**
+         * ==========================================
+         * NOTIFICAÇÕES E UTILITÁRIOS
          * ==========================================
          */
         function showSystemNotification(message, type = 'success') {
@@ -721,20 +1158,15 @@
                 text.className = 'text-yellow-400 font-mono';
             } else if (status === 'online') {
                 led.className = 'w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80]';
-                text.innerText = 'Notion Online';
+                text.innerText = 'Supabase Online';
                 text.className = 'text-green-400 font-mono';
             } else {
                 led.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
-                text.innerText = 'Modo Offline (Cache)';
+                text.innerText = 'Desconectado';
                 text.className = 'text-red-400 font-mono';
             }
         }
 
-        /**
-         * ==========================================
-         * INTEGRAÇÃO NOTION VIA MAKE.COM (BIDIRECIONAL)
-         * ==========================================
-         */
         function normalizeStr(str) {
             return (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         }
@@ -743,7 +1175,6 @@
             const normCat = normalizeStr(rawCategoryName);
             if (!normCat) return 'saude';
 
-            // Mapeamento direto ou por sinônimos antigos
             if (normCat.includes('saude')) return 'saude';
             if (normCat.includes('estud')) return 'estudo';
             if (normCat.includes('trabalh') || normCat.includes('pdi')) return 'trabalho';
@@ -760,234 +1191,23 @@
             ) || 'saude';
         }
 
-        async function carregarMissoesDoNotion(isManual = false) {
-            setSyncStatus('syncing');
-            try {
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao: "ler" })
-                });
-
-                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-
-                const rawText = await response.text();
-                if (rawText === "Accepted" || !rawText.trim()) {
-                    setSyncStatus('offline');
-                    if (isManual) showSystemNotification('Falta o módulo Webhook Response no Make.', 'error');
-                    return;
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (parseErr) {
-                    throw new Error("Resposta do Make não é um JSON válido.");
-                }
+        async function resetSaveConfirmation() {
+            if (!currentUser) return;
+            if (confirm("⚠️ ATENÇÃO: Deseja resetar seu Nível, XP e Equipamentos para o Nível 1 na nuvem? (Suas missões não serão apagadas).")) {
+                player.level = 1;
+                player.xp = 0;
+                player.maxXp = 200;
+                player.power = 0;
+                player.rank = "E";
+                player.playerClass = "Nenhuma";
+                player.equipment = { capacete: null, peitoral: null, botas: null, capa: null, arma_principal: null, arma_secundaria: null };
+                Object.keys(categoryTallies).forEach(k => categoryTallies[k] = 0);
                 
-                let items = [];
-                if (Array.isArray(data)) {
-                    items = data;
-                } else if (data && typeof data === 'object') {
-                    const possibleArray = data.results || data.items || data.data || data.array || data.missoes;
-                    if (Array.isArray(possibleArray)) {
-                        items = possibleArray;
-                    } else {
-                        items = [data];
-                    }
-                }
-
-                // Limpa todas as listas atuais antes de popular com os dados vindos do Notion
-                Object.keys(categories).forEach(k => { if (!categories[k].isSystem) categories[k].tasks = []; });
-                Object.keys(periodicQuests).forEach(k => { periodicQuests[k].list = []; });
-
-                items.forEach(item => {
-                    if (!item || typeof item !== 'object') return;
-
-                    let id, text, categoria, tipo, xp, done;
-
-                    // Formato 1: Objeto Bruto da API do Notion
-                    if (item.properties) {
-                        const p = item.properties;
-                        id = item.id;
-                        text = p.Quest?.title?.[0]?.plain_text || p.Name?.title?.[0]?.plain_text || '';
-                        categoria = p.Categoria?.select?.name || 'Saúde';
-                        tipo = p.Tipo?.select?.name || 'Main Quest';
-                        xp = p.XP?.number ?? 20;
-                        done = p['Concluída']?.checkbox ?? p.Concluida?.checkbox ?? false;
-                    } 
-                    // Formato 2: JSON estruturado pelo Make
-                    else {
-                        id = item.id || item.ID || ('notion_' + Math.random().toString(36).substr(2, 9));
-                        text = item.quest || item.Quest || item.text || item.title || '';
-                        categoria = item.categoria || item.Categoria || 'Saúde';
-                        tipo = item.tipo || item.Tipo || 'Main Quest';
-                        xp = parseInt(item.xp ?? item.Xp ?? item.XP) || 20;
-                        const rawDone = item.concluida ?? item.Concluida ?? item['Concluída'] ?? item.done;
-                        done = rawDone === true || rawDone === 'true';
-                    }
-
-                    // Ignora linhas em branco do Notion
-                    if (!text || String(text).trim() === '') return;
-
-                    const taskObj = { id, text: String(text).trim(), xp, done };
-                    const normTipo = normalizeStr(tipo);
-
-                    if (normTipo.includes('daily') || normTipo.includes('diaria')) {
-                        periodicQuests.daily.list.push(taskObj);
-                    } else if (normTipo.includes('weekly') || normTipo.includes('semanal')) {
-                        periodicQuests.weekly.list.push(taskObj);
-                    } else if (normTipo.includes('monthly') || normTipo.includes('mensal')) {
-                        periodicQuests.monthly.list.push(taskObj);
-                    } else if (normTipo.includes('yearly') || normTipo.includes('anual')) {
-                        periodicQuests.yearly.list.push(taskObj);
-                    } else {
-                        const matchedCatId = matchCategoryKey(categoria);
-                        categories[matchedCatId].tasks.push(taskObj);
-                    }
-                });
-
-                // Libera a Lootbox caso existam tarefas pendentes na lista
-                ['daily', 'weekly', 'monthly', 'yearly'].forEach(type => {
-                    if (periodicQuests[type].list.some(t => !t.done)) {
-                        periodicQuests[type].boxClaimed = false;
-                    }
-                });
-                Object.keys(categories).forEach(k => {
-                    if (!categories[k].isSystem && categories[k].tasks.some(t => !t.done)) {
-                        categories[k].boxClaimed = false;
-                    }
-                });
-
-                saveGameState();
-                renderTabs();
-                renderCategory(activeCategoryId);
-                renderPeriodicQuests();
-                setSyncStatus('online');
-                if (isManual) showSystemNotification('Sincronização com o Notion concluída!', 'success');
-
-            } catch (error) {
-                console.warn("Operando com cache local. Detalhe:", error);
-                setSyncStatus('offline');
-                if (isManual) showSystemNotification('Falha ao buscar do Notion. Usando cache local.', 'error');
-            }
-        }
-
-        async function criarMissaoNoNotion(text, categoriaTitle, tipoTitle, xp) {
-            setSyncStatus('syncing');
-            try {
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        acao: "criar",
-                        quest: text,
-                        categoria: categoriaTitle,
-                        tipo: tipoTitle,
-                        xp: xp,
-                        concluida: false
-                    })
-                });
-
-                if (!response.ok) throw new Error('Erro na resposta do Webhook');
-                setSyncStatus('online');
-                
-                setTimeout(() => carregarMissoesDoNotion(false), 1500);
-                return true;
-            } catch (error) {
-                console.error('Erro ao enviar missão para o Notion:', error);
-                setSyncStatus('offline');
-                return false;
-            }
-        }
-
-        async function atualizarStatusNoNotion(taskId, text, isDone) {
-            try {
-                await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        acao: "atualizar",
-                        id: taskId,
-                        quest: text,
-                        concluida: isDone
-                    })
-                });
-            } catch (e) {
-                console.warn("Não foi possível atualizar status no Notion em background.");
-            }
-        }
-
-        /**
-         * ==========================================
-         * SAVE STATE (LOCAL STORAGE)
-         * ==========================================
-         */
-        function saveGameState() {
-            const state = {
-                player,
-                categoryTallies,
-                resetTimestamps,
-                categoriesData: {},
-                periodicData: periodicQuests
-            };
-
-            Object.keys(categories).forEach(k => {
-                if (!categories[k].isSystem) {
-                    state.categoriesData[k] = {
-                        tasks: categories[k].tasks,
-                        boxClaimed: categories[k].boxClaimed
-                    };
-                }
-            });
-
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        }
-
-        function loadGameState() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (!saved) return;
-
-            try {
-                const parsed = JSON.parse(saved);
-                if (parsed.player) player = { ...player, ...parsed.player };
-                if (parsed.categoryTallies) {
-                    // Migração suave de chaves antigas (estudar -> estudo, pdi -> trabalho, roupas -> roupa)
-                    if (parsed.categoryTallies.estudar && !parsed.categoryTallies.estudo) parsed.categoryTallies.estudo = parsed.categoryTallies.estudar;
-                    if (parsed.categoryTallies.pdi && !parsed.categoryTallies.trabalho) parsed.categoryTallies.trabalho = parsed.categoryTallies.pdi;
-                    if (parsed.categoryTallies.roupas && !parsed.categoryTallies.roupa) parsed.categoryTallies.roupa = parsed.categoryTallies.roupas;
-                    categoryTallies = { ...categoryTallies, ...parsed.categoryTallies };
-                }
-                if (parsed.resetTimestamps) resetTimestamps = { ...resetTimestamps, ...parsed.resetTimestamps };
-
-                if (parsed.categoriesData) {
-                    Object.keys(parsed.categoriesData).forEach(k => {
-                        const targetKey = matchCategoryKey(k);
-                        if (categories[targetKey]) {
-                            categories[targetKey].tasks = (parsed.categoriesData[k].tasks || []).filter(t => t && t.text && t.text !== 'Missão');
-                            categories[targetKey].boxClaimed = Boolean(parsed.categoriesData[k].boxClaimed);
-                        }
-                    });
-                }
-
-                if (parsed.periodicData) {
-                    Object.keys(parsed.periodicData).forEach(k => {
-                        if (periodicQuests[k]) {
-                            periodicQuests[k].list = (parsed.periodicData[k].list || []).filter(t => t && t.text && t.text !== 'Missão');
-                            periodicQuests[k].boxClaimed = Boolean(parsed.periodicData[k].boxClaimed);
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Erro ao ler save local:", e);
-            }
-        }
-
-        function resetSaveConfirmation() {
-            if (confirm("⚠️ ATENÇÃO: Deseja resetar todo o seu Nível, XP e Equipamentos para o Nível 1? (Suas missões no Notion não serão apagadas).")) {
-                localStorage.removeItem(STORAGE_KEY);
-                sessionStorage.removeItem(AWAKENING_SESSION_KEY);
-                location.reload();
+                await savePlayerToSupabase();
+                updatePlayerUI();
+                recalcPower();
+                renderInventory();
+                showSystemNotification('Status do Jogador resetado para o Nível 1.', 'success');
             }
         }
 
@@ -1043,7 +1263,6 @@
                     }
                 }
             });
-            saveGameState();
         }
 
         function initiateLootbox(boxType, customName = null) {
@@ -1116,7 +1335,7 @@
                     player.xp += bonusXp;
                     updatePlayerUI();
                 }
-                saveGameState();
+                savePlayerToSupabase();
             } catch (error) {
                 console.error("Falha ao abrir a Lootbox:", error);
                 normalContent.classList.add('hidden');
@@ -1166,6 +1385,7 @@
         function recalcPower() {
             let total = 0;
             Object.values(player.equipment).forEach(eq => { if (eq) total += eq.power; });
+            player.power = total;
             document.getElementById('player-power').innerText = total.toLocaleString();
         }
 
@@ -1187,6 +1407,7 @@
          */
         const DOM = {
             level: document.getElementById('player-level'),
+            nameDisplay: document.getElementById('player-name-display'),
             rank: document.getElementById('player-rank'),
             xpBar: document.getElementById('xp-bar'),
             xpText: document.getElementById('xp-text'),
@@ -1201,21 +1422,18 @@
         };
 
         function init() {
-            checkAwakeningScreen();
-            loadGameState();
             renderTabs();
             renderCategory(activeCategoryId);
             renderPeriodicQuests();
             updatePlayerUI();
             recalcPower();
             startTimers();
-            
-            // Busca as tarefas atualizadas do Notion ao abrir o site
-            carregarMissoesDoNotion(false);
+            checkInitialAuthAndAwakening();
         }
 
         function updatePlayerUI() {
             DOM.level.innerText = `L${player.level}`;
+            DOM.nameDisplay.innerText = `Player: ${player.username}`;
             let currentRank = "E";
             Object.keys(ranks).forEach(lvl => {
                 if (player.level >= parseInt(lvl)) currentRank = ranks[lvl];
@@ -1251,7 +1469,6 @@
                 player.xp = Math.max(0, player.xp - xp);
             }
 
-            saveGameState();
             updatePlayerUI();
             renderTabs();
 
@@ -1261,7 +1478,8 @@
                 renderPeriodicQuests();
             }
 
-            atualizarStatusNoNotion(task.id, task.text, isDone);
+            atualizarStatusNoSupabase(task.id, isDone);
+            savePlayerToSupabase();
         }
 
         function processLevelUp() {
@@ -1310,8 +1528,8 @@
             document.getElementById('evolution-alert-container').innerHTML = evolutionHtml;
 
             DOM.modal.classList.remove('hidden');
-            saveGameState();
             updatePlayerUI();
+            savePlayerToSupabase();
         }
 
         function closeLevelUpModal() {
@@ -1326,7 +1544,7 @@
                 const isActive = key === activeCategoryId;
                 const taskCount = !data.isSystem ? data.tasks.filter(t => !t.done).length : null;
                 
-                btn.className = `tab-btn w-full text-left px-4 py-3 text-sm flex items-center justify-between text-gray-400 hover:text-blue-200 ${isActive ? 'active' : ''} ${data.isSystem ? 'mt-2 border-t border-gray-800' : ''}`;
+                btn.className = `tab-btn w-full text-left px-4 py-3 text-sm flex items-center justify-between text-gray-400 hover:text-blue-200 ${isActive ? 'active' : ''} ${key === 'ranking' ? 'mt-2 border-t border-gray-800 text-yellow-300' : ''}`;
                 btn.innerHTML = `
                     <div class="flex items-center gap-3">
                         <span class="text-lg">${data.icon}</span> 
@@ -1363,6 +1581,11 @@
                 DOM.inventoryContainer.classList.remove('hidden');
                 renderInventory();
                 return;
+            } else if (categoryId === 'ranking') {
+                DOM.form.classList.add('hidden');
+                DOM.catBadge.innerText = 'Global Leaderboard';
+                renderLeaderboard();
+                return;
             }
 
             if (cat.tasks.length === 0) {
@@ -1373,6 +1596,95 @@
             cat.tasks.forEach(task => {
                 DOM.catList.appendChild(createTaskElement(task, 'category', categoryId));
             });
+        }
+
+        /**
+         * ==========================================
+         * LEADERBOARD / RANKING DE CAÇADORES
+         * ==========================================
+         */
+        async function renderLeaderboard() {
+            DOM.catList.innerHTML = `
+                <div class="text-center py-8 text-cyan-400 animate-pulse font-mono text-sm">
+                    Consultando Associação de Caçadores...
+                </div>
+            `;
+
+            try {
+                const { data: hunters, error } = await supabaseClient
+                    .from('players')
+                    .select('id, username, level, rank, player_class, power, xp')
+                    .order('level', { ascending: false })
+                    .order('power', { ascending: false })
+                    .order('xp', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                if (!hunters || hunters.length === 0) {
+                    DOM.catList.innerHTML = `<div class="text-center py-8 text-gray-500">Nenhum caçador registrado ainda.</div>`;
+                    return;
+                }
+
+                const rankBadgeColors = {
+                    'E': 'border-gray-500 text-gray-300',
+                    'D': 'border-green-500 text-green-400',
+                    'C': 'border-blue-500 text-blue-400',
+                    'B': 'border-purple-500 text-purple-400',
+                    'A': 'border-red-500 text-red-400',
+                    'S': 'border-yellow-400 text-yellow-300 text-glow-gold',
+                    'Nacional': 'border-pink-500 text-pink-300 text-glow',
+                    'Global': 'border-cyan-400 text-cyan-200 text-glow',
+                    'Monarca': 'border-white text-white text-glow-god'
+                };
+
+                let html = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-xs text-gray-400 px-3 pb-1 border-b border-blue-900 border-opacity-40 uppercase tracking-wider">
+                            <span>Posição / Caçador</span>
+                            <span>Status de Combate</span>
+                        </div>
+                `;
+
+                hunters.forEach((h, idx) => {
+                    const pos = idx + 1;
+                    const isMe = currentUser && h.id === currentUser.id;
+                    const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
+                    const rColor = rankBadgeColors[h.rank] || 'border-gray-500 text-gray-300';
+
+                    html += `
+                        <div class="flex items-center justify-between p-3 rounded border ${isMe ? 'bg-blue-950 bg-opacity-40 border-cyan-400 shadow-[0_0_12px_rgba(0,212,255,0.2)]' : 'bg-gray-900 bg-opacity-50 border-blue-900 border-opacity-30'}">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 text-center font-bold ${pos <= 3 ? 'text-xl' : 'text-sm text-gray-500 font-mono'}">
+                                    ${medal}
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-base ${isMe ? 'text-white text-glow' : 'text-blue-100'}">${h.username}</span>
+                                        ${isMe ? '<span class="text-[10px] bg-cyan-900 text-cyan-200 px-1.5 py-0.2 rounded uppercase font-bold">Você</span>' : ''}
+                                        <span class="text-[10px] font-bold px-1.5 py-0.2 rounded border ${rColor}">Rank ${h.rank || 'E'}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-400">
+                                        Classe: <span class="text-purple-300">${h.player_class || 'Nenhuma'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-right">
+                                <div class="text-sm font-bold text-yellow-400">Level ${h.level || 1}</div>
+                                <div class="text-xs text-purple-300 font-mono">⚡ ${(h.power || 0).toLocaleString()} PWR</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+                DOM.catList.innerHTML = html;
+
+            } catch (err) {
+                console.error("Erro ao carregar Leaderboard:", err);
+                DOM.catList.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">Erro ao carregar o Ranking Global.</div>`;
+            }
         }
 
         function renderInventory() {
@@ -1420,7 +1732,7 @@
             DOM.catList.innerHTML = `
                 <div class="bg-black bg-opacity-50 p-4 rounded border border-blue-900 border-opacity-50 text-sm space-y-6">
                     <div>
-                        <h3 class="text-blue-400 font-bold mb-4 uppercase tracking-wider border-b border-blue-900 pb-2">Central de Criação (Notion Sync)</h3>
+                        <h3 class="text-blue-400 font-bold mb-4 uppercase tracking-wider border-b border-blue-900 pb-2">Central de Criação (Supabase Cloud)</h3>
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-gray-400 text-xs mb-1">Título da Tarefa</label>
@@ -1452,24 +1764,48 @@
                         </div>
                     </div>
 
+                    <!-- Alterar Nome de Caçador -->
+                    <div class="border-t border-gray-800 pt-4">
+                        <label class="block text-gray-400 text-xs mb-2 uppercase">Identidade do Caçador no Ranking</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-hunter-name" value="${player.username}" class="flex-grow bg-black bg-opacity-80 border border-blue-800 rounded px-3 py-1.5 text-blue-100 focus:outline-none focus:border-blue-400">
+                            <button onclick="updateHunterName()" class="px-4 py-1.5 border border-blue-500 text-blue-300 hover:bg-blue-900 rounded text-xs uppercase font-bold">
+                                Salvar Nome
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="border-t border-gray-800 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="text-xs text-gray-400">
-                            Sincronize manualmente, exiba a tela inicial ou resete os status do jogador.
+                            Conta conectada: <span class="text-cyan-300 font-mono">${currentUser?.email || 'Nenhuma'}</span>
                         </div>
                         <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                            <button onclick="carregarMissoesDoNotion(true)" class="flex-1 md:flex-initial px-4 py-2 border border-cyan-600 text-cyan-400 hover:bg-cyan-950 rounded text-xs uppercase font-bold transition-all">
-                                🔄 Puxar do Notion
+                            <button onclick="syncAllFromSupabase(true)" class="flex-1 md:flex-initial px-3 py-2 border border-cyan-600 text-cyan-400 hover:bg-cyan-950 rounded text-xs uppercase font-bold transition-all">
+                                🔄 Sincronizar
                             </button>
-                            <button onclick="triggerAwakeningScreenManual()" class="flex-1 md:flex-initial px-4 py-2 border border-purple-600 text-purple-400 hover:bg-purple-950 rounded text-xs uppercase font-bold transition-all">
+                            <button onclick="triggerAwakeningScreenManual()" class="flex-1 md:flex-initial px-3 py-2 border border-purple-600 text-purple-400 hover:bg-purple-950 rounded text-xs uppercase font-bold transition-all">
                                 ⚡ Tela Inicial
                             </button>
-                            <button onclick="resetSaveConfirmation()" class="flex-1 md:flex-initial px-4 py-2 border border-red-800 text-red-500 hover:bg-red-950 rounded text-xs uppercase font-bold transition-all">
-                                ⚠️ Resetar Save
+                            <button onclick="resetSaveConfirmation()" class="flex-1 md:flex-initial px-3 py-2 border border-red-800 text-red-500 hover:bg-red-950 rounded text-xs uppercase font-bold transition-all">
+                                ⚠️ Resetar Nível
+                            </button>
+                            <button onclick="handleLogout()" class="flex-1 md:flex-initial px-3 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded text-xs uppercase font-bold transition-all">
+                                🚪 Sair
                             </button>
                         </div>
                     </div>
                 </div>
             `;
+        }
+
+        async function updateHunterName() {
+            const input = document.getElementById('admin-hunter-name');
+            const newName = input?.value.trim();
+            if (!newName) return;
+            player.username = newName;
+            updatePlayerUI();
+            await savePlayerToSupabase();
+            showSystemNotification(`Nome de Caçador atualizado para "${newName}"!`, 'success');
         }
 
         async function handleAdminSubmit() {
@@ -1486,44 +1822,48 @@
             
             const xp = parseInt(xpInput.value) || 20;
             const typeVal = typeInput.value;
-            const newTask = { id: 'local_' + Date.now(), text, xp, done: false };
             
-            let categoriaNotion = "Saúde";
-            let tipoNotion = "Main Quest";
+            let categoriaDb = "Saúde";
+            let tipoDb = "Main Quest";
+            let targetCatId = null;
+            let targetPerId = null;
 
             if (typeVal.startsWith('cat_')) {
-                const catId = typeVal.replace('cat_', '');
-                categoriaNotion = categories[catId].title;
-                tipoNotion = "Main Quest";
-                categories[catId].tasks.push(newTask);
-                categories[catId].boxClaimed = false; 
+                targetCatId = typeVal.replace('cat_', '');
+                categoriaDb = categories[targetCatId].title;
+                tipoDb = "Main Quest";
             } else if (typeVal.startsWith('per_')) {
-                const perId = typeVal.replace('per_', '');
-                categoriaNotion = "Saúde"; 
-                tipoNotion = perId.charAt(0).toUpperCase() + perId.slice(1);
-                periodicQuests[perId].list.push(newTask);
-                periodicQuests[perId].boxClaimed = false;
-                updateBoxIcon(perId, false);
+                targetPerId = typeVal.replace('per_', '');
+                categoriaDb = "Saúde"; 
+                tipoDb = targetPerId.charAt(0).toUpperCase() + targetPerId.slice(1);
             }
-            
-            saveGameState();
-            renderTabs();
-            renderPeriodicQuests();
 
             const oldText = btn.innerText;
-            btn.innerText = "Sincronizando com Notion...";
+            btn.innerText = "Gravando no Servidor...";
             btn.disabled = true;
 
-            const success = await criarMissaoNoNotion(text, categoriaNotion, tipoNotion, xp);
+            const inserted = await criarMissaoNoSupabase(text, categoriaDb, tipoDb, xp);
 
-            nameInput.value = '';
             btn.disabled = false;
             btn.innerText = oldText;
 
-            if (success) {
-                showSystemNotification(`Missão "${text}" registrada no Notion!`, 'success');
+            if (inserted) {
+                const newTask = { id: inserted.id, text: inserted.quest, xp: inserted.xp, done: false };
+                if (targetCatId) {
+                    categories[targetCatId].tasks.push(newTask);
+                    categories[targetCatId].boxClaimed = false;
+                } else if (targetPerId) {
+                    periodicQuests[targetPerId].list.push(newTask);
+                    periodicQuests[targetPerId].boxClaimed = false;
+                    updateBoxIcon(targetPerId, false);
+                }
+                nameInput.value = '';
+                renderTabs();
+                renderPeriodicQuests();
+                savePlayerToSupabase();
+                showSystemNotification(`Missão "${text}" registrada no Sistema!`, 'success');
             } else {
-                showSystemNotification(`Salva localmente (Falha ao contatar Notion).`, 'error');
+                showSystemNotification(`Erro ao registrar missão no banco de dados.`, 'error');
             }
         }
 
@@ -1537,25 +1877,22 @@
             const newXp = 25;
             const currentCat = categories[activeCategoryId];
 
-            const newTask = { id: 'local_' + Date.now(), text: text, xp: newXp, done: false };
-            currentCat.tasks.push(newTask);
-            currentCat.boxClaimed = false; 
-            
-            DOM.input.value = '';
-            saveGameState();
-            renderTabs();
-            renderCategory(activeCategoryId);
-
             btn.disabled = true;
             btn.innerText = "...";
-            const success = await criarMissaoNoNotion(text, currentCat.title, "Main Quest", newXp);
+            const inserted = await criarMissaoNoSupabase(text, currentCat.title, "Main Quest", newXp);
             btn.disabled = false;
             btn.innerText = "Add";
 
-            if (success) {
-                showSystemNotification(`Missão "${text}" sincronizada com o Notion!`, 'success');
+            if (inserted) {
+                currentCat.tasks.push({ id: inserted.id, text: inserted.quest, xp: inserted.xp, done: false });
+                currentCat.boxClaimed = false;
+                DOM.input.value = '';
+                renderTabs();
+                renderCategory(activeCategoryId);
+                savePlayerToSupabase();
+                showSystemNotification(`Missão "${text}" adicionada!`, 'success');
             } else {
-                showSystemNotification(`Missão salva localmente.`, 'error');
+                showSystemNotification(`Falha ao salvar missão.`, 'error');
             }
         });
 
@@ -1580,7 +1917,7 @@
 
         function createTaskElement(task, listType, categoryId = null) {
             const li = document.createElement('li');
-            li.className = `quest-item flex items-start gap-3 p-2.5 rounded bg-gray-900 bg-opacity-40 border ${task.done ? 'completed border-gray-800 opacity-60' : 'border-blue-900 border-opacity-30 hover:border-blue-500'} transition-all`;
+            li.className = `quest-item group flex items-start gap-3 p-2.5 rounded bg-gray-900 bg-opacity-40 border ${task.done ? 'completed border-gray-800 opacity-60' : 'border-blue-900 border-opacity-30 hover:border-blue-500'} transition-all`;
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -1598,9 +1935,16 @@
             spanXp.className = `text-[10px] font-bold ${task.done ? 'text-gray-600' : 'text-blue-400'} bg-black px-1.5 py-0.5 rounded border border-blue-900 flex-shrink-0`;
             spanXp.textContent = `+${task.xp} XP`;
 
+            const delBtn = document.createElement('button');
+            delBtn.className = 'text-xs text-gray-600 hover:text-red-400 opacity-40 group-hover:opacity-100 transition-opacity px-1';
+            delBtn.title = 'Excluir missão';
+            delBtn.innerText = '🗑️';
+            delBtn.onclick = () => deletarMissao(task.id, listType, categoryId);
+
             li.appendChild(checkbox);
             li.appendChild(spanText);
             li.appendChild(spanXp);
+            li.appendChild(delBtn);
             return li;
         }
 
@@ -1616,6 +1960,16 @@
             return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         }
 
+        async function resetPeriodicGroupInDb(typeKey) {
+            if (!currentUser) return;
+            const ids = periodicQuests[typeKey].list.map(t => t.id);
+            if (ids.length === 0) return;
+            await supabaseClient
+                .from('quests')
+                .update({ concluida: false })
+                .in('id', ids);
+        }
+
         function checkPeriodicResets(now) {
             let changed = false;
             const currentDayStr = now.toDateString();
@@ -1627,29 +1981,33 @@
                 periodicQuests.daily.list.forEach(t => t.done = false);
                 periodicQuests.daily.boxClaimed = false;
                 resetTimestamps.daily = currentDayStr;
+                resetPeriodicGroupInDb('daily');
                 changed = true;
             }
             if (resetTimestamps.weekly !== currentWeek) {
                 periodicQuests.weekly.list.forEach(t => t.done = false);
                 periodicQuests.weekly.boxClaimed = false;
                 resetTimestamps.weekly = currentWeek;
+                resetPeriodicGroupInDb('weekly');
                 changed = true;
             }
             if (resetTimestamps.monthly !== currentMonth) {
                 periodicQuests.monthly.list.forEach(t => t.done = false);
                 periodicQuests.monthly.boxClaimed = false;
                 resetTimestamps.monthly = currentMonth;
+                resetPeriodicGroupInDb('monthly');
                 changed = true;
             }
             if (resetTimestamps.yearly !== currentYear) {
                 periodicQuests.yearly.list.forEach(t => t.done = false);
                 periodicQuests.yearly.boxClaimed = false;
                 resetTimestamps.yearly = currentYear;
+                resetPeriodicGroupInDb('yearly');
                 changed = true;
             }
 
-            if (changed) {
-                saveGameState();
+            if (changed && currentUser) {
+                savePlayerToSupabase();
                 renderPeriodicQuests();
                 showSystemNotification('Reset temporal concluído. Missões periódicas reiniciadas!', 'success');
             }
