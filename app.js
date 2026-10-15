@@ -9,11 +9,139 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const LEGACY_STORAGE_KEY = 'soloLevelingOS_Save_v4';
 const AWAKENING_SESSION_KEY = 'soloLevelingOS_Awakened_Session';
+const SOUND_MUTE_STORAGE_KEY = 'lifeOS_SoundMuted';
 
 // Quantidades obrigatórias para liberar as Lootboxes
 const DAILY_QUOTA = 4;
 const WEEKLY_QUOTA = 3;
 const CATEGORY_MIN_QUOTA = 3;
+
+/**
+ * ==========================================
+ * SINTETIZADOR DE ÁUDIO NATIVO (WEB AUDIO API)
+ * ==========================================
+ * Gera todos os efeitos sonoros do Sistema em tempo real sem arquivos externos.
+ */
+const SoundFX = {
+    ctx: null,
+    muted: localStorage.getItem(SOUND_MUTE_STORAGE_KEY) === 'true',
+
+    init() {
+        if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    },
+
+    playTone(freq, type = 'sine', duration = 0.1, volume = 0.12, startTimeOffset = 0, endFreq = null) {
+        if (this.muted) return;
+        try {
+            this.init();
+            if (!this.ctx) return;
+
+            const now = this.ctx.currentTime + startTimeOffset;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now);
+            if (endFreq) {
+                osc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
+            }
+
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now);
+            osc.stop(now + duration + 0.02);
+        } catch (e) {}
+    },
+
+    // Clique sutil de interface e troca de abas
+    click() {
+        this.playTone(900, 'sine', 0.035, 0.05, 0, 600);
+    },
+
+    // Som de inicialização na tela NOTIFICATION ("Yes")
+    boot() {
+        this.playTone(220, 'sawtooth', 0.18, 0.08, 0, 880);
+        this.playTone(880, 'sine', 0.35, 0.12, 0.15, 1760);
+    },
+
+    // Som cristalino ao concluir uma missão ou subtarefa
+    questComplete() {
+        this.playTone(587.33, 'triangle', 0.12, 0.12, 0);     // D5
+        this.playTone(880.00, 'triangle', 0.25, 0.14, 0.09);  // A5
+        this.playTone(1174.66, 'sine', 0.35, 0.10, 0.18);     // D6
+    },
+
+    // "Tec-tec" mecânico da Roleta CS:GO a cada card que cruza o laser
+    rouletteTick() {
+        this.playTone(1350, 'triangle', 0.022, 0.09, 0, 420);
+    },
+
+    // Revelação do Equipamento da Lootbox
+    lootReveal(isGod = false) {
+        if (isGod) {
+            // Acorde celestial/dimensional para Divino, Hack e Break System
+            [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => {
+                this.playTone(f, 'sawtooth', 0.75, 0.08, i * 0.055);
+                this.playTone(f * 1.5, 'sine', 0.85, 0.06, i * 0.055);
+            });
+        } else {
+            [440, 554.37, 659.25, 880].forEach((f, i) => {
+                this.playTone(f, 'triangle', 0.4, 0.1, i * 0.06);
+            });
+        }
+    },
+
+    // Fanfarra de Level Up
+    levelUp() {
+        const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.51];
+        notes.forEach((f, idx) => {
+            this.playTone(f, 'triangle', 0.35, 0.13, idx * 0.075);
+        });
+    },
+
+    // Alarme da Zona de Penalidade e erro
+    penaltyAlarm() {
+        this.playTone(190, 'sawtooth', 0.3, 0.14, 0, 130);
+        this.playTone(190, 'sawtooth', 0.35, 0.14, 0.35, 120);
+    },
+
+    // Alerta rápido de erro/bloqueio
+    error() {
+        this.playTone(240, 'sawtooth', 0.12, 0.1, 0, 160);
+    }
+};
+
+function toggleSoundFX() {
+    SoundFX.muted = !SoundFX.muted;
+    localStorage.setItem(SOUND_MUTE_STORAGE_KEY, String(SoundFX.muted));
+    updateSoundButtonUI();
+    if (!SoundFX.muted) {
+        SoundFX.click();
+        showSystemNotification('Áudio do Sistema ativado.', 'success');
+    } else {
+        showSystemNotification('Áudio do Sistema silenciado.', 'success');
+    }
+}
+
+function updateSoundButtonUI() {
+    const btn = document.getElementById('sound-toggle-btn');
+    if (!btn) return;
+    btn.innerText = SoundFX.muted ? '🔇' : '🔊';
+    btn.className = SoundFX.muted
+        ? 'px-2.5 py-1 rounded bg-black/60 border border-gray-800 text-xs text-gray-500 transition-all'
+        : 'px-2.5 py-1 rounded bg-black/60 border border-blue-900 hover:border-cyan-400 text-xs text-cyan-300 transition-all';
+}
 
 /**
  * ==========================================
@@ -176,6 +304,7 @@ let player = {
     power: 0,
     rank: "E",
     playerClass: "Nenhuma",
+    streak: 0,
     isAdmin: false,
     equipment: { capacete: null, peitoral: null, botas: null, capa: null, arma_principal: null, arma_secundaria: null }
 };
@@ -193,7 +322,9 @@ let resetTimestamps = {
     yearly: new Date().getFullYear(),
     last_daily_codes: [],
     last_weekly_codes: [],
-    locked_category: null
+    locked_category: null,
+    last_streak_date: null,
+    streak_count: 0
 };
 
 const ranks = { 1: "E", 15: "D", 30: "C", 50: "B", 75: "A", 100: "S", 150: "Nacional", 200: "Global", 250: "Monarca" };
@@ -259,6 +390,7 @@ async function checkInitialAuthAndAwakening() {
 }
 
 async function acceptAwakening() {
+    SoundFX.boot();
     const screen = document.getElementById('awakening-screen');
     const box = document.getElementById('awakening-box');
     const stepInvite = document.getElementById('awakening-step-invite');
@@ -287,6 +419,7 @@ async function acceptAwakening() {
 }
 
 function rejectAwakening() {
+    SoundFX.penaltyAlarm();
     const box = document.getElementById('awakening-box');
     const warning = document.getElementById('awakening-warning');
     const timer = document.getElementById('awakening-timer');
@@ -303,6 +436,7 @@ function rejectAwakening() {
 }
 
 function switchAuthMode(mode) {
+    SoundFX.click();
     authMode = mode;
     const tabLogin = document.getElementById('tab-auth-login');
     const tabRegister = document.getElementById('tab-auth-register');
@@ -327,6 +461,7 @@ function switchAuthMode(mode) {
 
 async function handleAuthSubmit(e) {
     e.preventDefault();
+    SoundFX.click();
     const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
     const usernameInput = document.getElementById('auth-username').value.trim();
@@ -363,6 +498,7 @@ async function handleAuthSubmit(e) {
         }
 
         await syncAllFromSupabase(false);
+        SoundFX.boot();
 
         const screen = document.getElementById('awakening-screen');
         const box = document.getElementById('awakening-box');
@@ -374,6 +510,7 @@ async function handleAuthSubmit(e) {
         }, 420);
 
     } catch (err) {
+        SoundFX.error();
         console.error("Erro de autenticação:", err);
         errorMsg.innerText = err.message || "Falha na autenticação.";
         errorMsg.classList.remove('hidden');
@@ -384,12 +521,14 @@ async function handleAuthSubmit(e) {
 }
 
 async function handleLogout() {
+    SoundFX.click();
     await supabaseClient.auth.signOut();
     sessionStorage.removeItem(AWAKENING_SESSION_KEY);
     location.reload();
 }
 
 function triggerAwakeningScreenManual() {
+    SoundFX.click();
     const screen = document.getElementById('awakening-screen');
     const stepInvite = document.getElementById('awakening-step-invite');
     const stepAuth = document.getElementById('awakening-step-auth');
@@ -411,10 +550,11 @@ function triggerAwakeningScreenManual() {
 
 /**
  * ==========================================
- * GERADOR DE HÁBITOS E TELA DE PENALIDADE (ATÉ 00:00)
+ * GERADOR DE HÁBITOS, STREAK E TELA DE PENALIDADE
  * ==========================================
  */
 function openPenaltyModalUI(detailsArray = null) {
+    SoundFX.penaltyAlarm();
     const modal = document.getElementById('penalty-modal');
     const box = document.getElementById('penalty-window-box');
     const detailsEl = document.getElementById('penalty-modal-details');
@@ -434,6 +574,7 @@ function openPenaltyModalUI(detailsArray = null) {
 }
 
 function closePenaltyModal() {
+    SoundFX.click();
     document.getElementById('penalty-modal').classList.add('hidden');
 }
 
@@ -453,7 +594,6 @@ function updatePenaltyCountdownDisplay() {
     el.innerText = `${h} HOURS, ${m} MINUTES, ${s} SECONDS`;
 }
 
-// Gera um ciclo totalmente novo (no reset diário ou semanal)
 async function generateRandomPeriodicQuests(periodType) {
     if (!currentUser) return;
     const isDaily = periodType === 'daily';
@@ -505,7 +645,6 @@ async function generateRandomPeriodicQuests(periodType) {
     updateBoxIcon(periodType, false);
 }
 
-// Completa a lista caso o jogador tenha menos de 4 Dailies ou menos de 3 Weeklies (sem apagar as atuais)
 async function topUpPeriodicQuests(periodType) {
     if (!currentUser) return false;
     const isDaily = periodType === 'daily';
@@ -564,6 +703,14 @@ async function applyDailyPenalty() {
     if (!currentUser) return;
     const penaltiesApplied = [];
 
+    // 1. Quebra da Ofensiva Diária (Streak Reset)
+    if (player.streak > 0) {
+        penaltiesApplied.push(`• Ofensiva Quebrada: Sua sequência de 🔥 ${player.streak} dias foi zerada!`);
+    }
+    player.streak = 0;
+    resetTimestamps.streak_count = 0;
+
+    // 2. Dreno de XP ou Queda de Nível
     const xpLoss = Math.max(40, Math.floor(player.xp * 0.35));
     if (player.xp >= xpLoss) {
         player.xp -= xpLoss;
@@ -577,11 +724,13 @@ async function applyDailyPenalty() {
         penaltiesApplied.push(`• EXP reduzido a 0.`);
     }
 
+    // 3. Bloqueio de Categoria Principal Aleatória
     const mainCatKeys = Object.keys(categories).filter(k => !categories[k].isSystem);
     const randomCatKey = mainCatKeys[Math.floor(Math.random() * mainCatKeys.length)];
     resetTimestamps.locked_category = randomCatKey;
     penaltiesApplied.push(`• Categoria Bloqueada: [${categories[randomCatKey].title}] 🔒`);
 
+    // 4. Injeção da Missão de Sobrevivência (Penalidade)
     const penaltyText = PENALTY_QUESTS_POOL[Math.floor(Math.random() * PENALTY_QUESTS_POOL.length)];
     const { data: penRow } = await supabaseClient.from('quests').insert([{
         user_id: currentUser.id,
@@ -644,7 +793,6 @@ function mapRowToTaskObj(row) {
         done: Boolean(row.concluida),
         dificuldade: row.dificuldade || 'Fácil',
         subtarefas: Array.isArray(row.subtarefas) ? row.subtarefas : [],
-        // Dailies e Weeklies do sistema são sempre aprovadas por padrão
         aprovada: isDailyOrWeekly ? true : (row.aprovada !== undefined ? Boolean(row.aprovada) : true),
         isPenalty: normTipo.includes('penalty') || String(row.quest).includes('[PENALIDADE]')
     };
@@ -675,6 +823,7 @@ async function ensurePlayerProfile(preferredUsername = null) {
         power: 0,
         rank: 'E',
         player_class: 'Nenhuma',
+        streak: 0,
         equipment: player.equipment,
         category_tallies: categoryTallies,
         reset_timestamps: resetTimestamps,
@@ -713,6 +862,8 @@ async function syncAllFromSupabase(isManual = false) {
                 resetTimestamps = { ...resetTimestamps, ...profile.reset_timestamps };
             }
             if (profile.boxes_claimed) applyBoxesClaimedObject(profile.boxes_claimed);
+
+            player.streak = profile.streak ?? resetTimestamps.streak_count ?? 0;
         }
 
         const { data: questsData, error: questsErr } = await supabaseClient
@@ -745,13 +896,22 @@ async function syncAllFromSupabase(isManual = false) {
             }
         });
 
-        // 1. Primeiro verifica se o dia ou a semana virou em relação ao último acesso
         await checkPeriodicResets(new Date());
 
-        // 2. Garante que todo jogador tenha sempre as 4 Daily Quests e 3 Weekly Quests completas
         let toppedUp = false;
         if (await topUpPeriodicQuests('daily')) toppedUp = true;
         if (await topUpPeriodicQuests('weekly')) toppedUp = true;
+
+        // Se o jogador já tinha batido todas as 4 Dailies hoje antes da atualização, garante 1 de Streak!
+        const todayStr = new Date().toDateString();
+        const nonPenDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
+        if (nonPenDailies.length >= DAILY_QUOTA && periodicQuests.daily.list.every(t => t.done) && resetTimestamps.last_streak_date !== todayStr) {
+            player.streak = Math.max(1, (player.streak || 0) + 1);
+            resetTimestamps.last_streak_date = todayStr;
+            resetTimestamps.streak_count = player.streak;
+            toppedUp = true;
+        }
+
         if (toppedUp) await savePlayerToSupabase();
 
         if (periodicQuests.daily.list.some(t => t.isPenalty && !t.done)) {
@@ -769,7 +929,10 @@ async function syncAllFromSupabase(isManual = false) {
         renderPeriodicQuests();
         setSyncStatus('online');
 
-        if (isManual) showSystemNotification('Sincronização concluída!', 'success');
+        if (isManual) {
+            SoundFX.click();
+            showSystemNotification('Sincronização concluída!', 'success');
+        }
     } catch (err) {
         console.error("Erro ao sincronizar:", err);
         setSyncStatus('offline');
@@ -786,27 +949,35 @@ async function savePlayerToSupabase() {
     let totalPower = 0;
     Object.values(player.equipment).forEach(eq => { if (eq) totalPower += eq.power; });
     player.power = totalPower;
+    resetTimestamps.streak_count = player.streak;
 
     try {
+        const updatePayload = {
+            username: player.username,
+            level: player.level,
+            xp: Math.floor(player.xp),
+            max_xp: player.maxXp,
+            power: totalPower,
+            rank: player.rank,
+            player_class: player.playerClass,
+            streak: player.streak,
+            equipment: player.equipment,
+            category_tallies: categoryTallies,
+            reset_timestamps: resetTimestamps,
+            boxes_claimed: getBoxesClaimedObject(),
+            updated_at: new Date().toISOString()
+        };
+
         const { error } = await supabaseClient
             .from('players')
-            .update({
-                username: player.username,
-                level: player.level,
-                xp: Math.floor(player.xp),
-                max_xp: player.maxXp,
-                power: totalPower,
-                rank: player.rank,
-                player_class: player.playerClass,
-                equipment: player.equipment,
-                category_tallies: categoryTallies,
-                reset_timestamps: resetTimestamps,
-                boxes_claimed: getBoxesClaimedObject(),
-                updated_at: new Date().toISOString()
-            })
+            .update(updatePayload)
             .eq('id', currentUser.id);
 
-        if (error) throw error;
+        // Fallback automático caso a coluna streak ainda não tenha sido criada no banco
+        if (error) {
+            delete updatePayload.streak;
+            await supabaseClient.from('players').update(updatePayload).eq('id', currentUser.id);
+        }
         setSyncStatus('online');
     } catch (err) {
         console.error("Falha ao salvar perfil:", err);
@@ -863,6 +1034,7 @@ async function atualizarMissaoNoSupabase(taskId, updates) {
 
 async function deletarMissao(taskId, listType, categoryId = null) {
     if (!currentUser) return;
+    SoundFX.click();
     setSyncStatus('syncing');
 
     if (listType === 'category' && categories[categoryId]) {
@@ -922,15 +1094,15 @@ function setSyncStatus(status) {
     if (status === 'syncing') {
         led.className = 'w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping';
         text.innerText = 'Sincronizando...';
-        text.className = 'text-yellow-400 font-mono';
+        text.className = 'text-yellow-400 font-mono hidden sm:inline';
     } else if (status === 'online') {
         led.className = 'w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80]';
-        text.innerText = 'Supabase Online';
-        text.className = 'text-green-400 font-mono';
+        text.innerText = 'Online';
+        text.className = 'text-green-400 font-mono hidden sm:inline';
     } else {
         led.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
-        text.innerText = 'Desconectado';
-        text.className = 'text-red-400 font-mono';
+        text.innerText = 'Offline';
+        text.className = 'text-red-400 font-mono hidden sm:inline';
     }
 }
 
@@ -958,6 +1130,7 @@ function matchCategoryKey(rawCategoryName) {
 }
 
 function goToRequestQuest() {
+    SoundFX.click();
     if (!categories[activeCategoryId]?.isSystem) {
         preselectedCategoryForRequest = `cat_${activeCategoryId}`;
     }
@@ -967,6 +1140,7 @@ function goToRequestQuest() {
 }
 
 function jumpToCategory(catKey) {
+    SoundFX.click();
     activeCategoryId = catKey;
     renderTabs();
     renderCategory(catKey);
@@ -974,7 +1148,7 @@ function jumpToCategory(catKey) {
 
 /**
  * ==========================================
- * SISTEMA DE LOOT & ROLETA CS:GO (BLINDADO)
+ * SISTEMA DE LOOT & ROLETA CS:GO (COM SOM FÍSICO)
  * ==========================================
  */
 const equipSlots = ['capacete', 'peitoral', 'botas', 'capa', 'arma_principal', 'arma_secundaria'];
@@ -1005,11 +1179,10 @@ let currentLootItem = null;
 let currentLootBoxType = 'daily';
 let isRouletteSpinning = false;
 
-// Verifica exclusivamente a lista onde a missão acabou de ser concluída e exige a cota completa!
 function checkLootboxTriggers(completedListType, completedCategoryId = null) {
     if (['daily', 'weekly', 'monthly', 'yearly'].includes(completedListType)) {
         const group = periodicQuests[completedListType];
-        if (!group || group.boxClaimed) return;
+        if (!group) return;
 
         const nonPenaltyApproved = group.list.filter(t => t.aprovada && !t.isPenalty);
         const allTasksInGroup = group.list.filter(t => t.aprovada);
@@ -1020,11 +1193,23 @@ function checkLootboxTriggers(completedListType, completedCategoryId = null) {
                 ? WEEKLY_QUOTA
                 : CATEGORY_MIN_QUOTA;
 
-        // Só libera a Box se tiver a quantidade mínima exigida E 100% das missões (incluindo penalidade) concluídas
         if (nonPenaltyApproved.length >= minRequired && allTasksInGroup.every(t => t.done)) {
-            group.boxClaimed = true;
-            updateBoxIcon(completedListType, true);
-            initiateLootbox(completedListType);
+            // Incrementa a Ofensiva Diária (Streak) quando fecha 100% das Daily Quests do dia
+            if (completedListType === 'daily') {
+                const todayStr = new Date().toDateString();
+                if (resetTimestamps.last_streak_date !== todayStr) {
+                    player.streak = (player.streak || 0) + 1;
+                    resetTimestamps.last_streak_date = todayStr;
+                    resetTimestamps.streak_count = player.streak;
+                    showSystemNotification(`🔥 Ofensiva Diária aumentou para ${player.streak} dias seguidos!`, 'success');
+                }
+            }
+
+            if (!group.boxClaimed) {
+                group.boxClaimed = true;
+                updateBoxIcon(completedListType, true);
+                initiateLootbox(completedListType);
+            }
         }
         return;
     }
@@ -1068,6 +1253,7 @@ function initiateLootbox(boxType, customName = null) {
 function openLootbox() {
     if (isRouletteSpinning) return;
     isRouletteSpinning = true;
+    SoundFX.boot();
 
     const phase1 = document.getElementById('lootbox-phase-1');
     const phaseRoulette = document.getElementById('lootbox-phase-roulette');
@@ -1100,13 +1286,36 @@ function openLootbox() {
 
     const cardWidth = 112;
     const gap = 8;
-    const step = cardWidth + gap;
+    const step = cardWidth + gap; // 120px por carta
     const viewportWidth = viewport.clientWidth || 600;
     const jitter = Math.floor(Math.random() * 50) - 25;
     const targetOffset = (WINNING_INDEX * step) + (cardWidth / 2) - (viewportWidth / 2) + jitter;
 
     track.style.transition = 'transform 5.2s cubic-bezier(0.08, 0.82, 0.17, 1)';
     track.style.transform = `translateX(-${targetOffset}px)`;
+
+    // Monitora em tempo real a posição física da fita para tocar o "tec" exato em cada carta que cruza o laser!
+    let lastCardIndexUnderLaser = -1;
+    const spinStartTime = performance.now();
+
+    function monitorRouletteTicks(now) {
+        if (!isRouletteSpinning) return;
+        const style = window.getComputedStyle(track);
+        const matrix = new DOMMatrixReadOnly(style.transform);
+        const currentTranslateX = Math.abs(matrix.m41);
+        const laserPositionInTrack = currentTranslateX + (viewportWidth / 2);
+        const currentCardIndex = Math.floor(laserPositionInTrack / step);
+
+        if (currentCardIndex !== lastCardIndexUnderLaser && currentCardIndex >= 0) {
+            lastCardIndexUnderLaser = currentCardIndex;
+            SoundFX.rouletteTick();
+        }
+
+        if (now - spinStartTime < 5250) {
+            requestAnimationFrame(monitorRouletteTicks);
+        }
+    }
+    requestAnimationFrame(monitorRouletteTicks);
 
     setTimeout(() => {
         revealFinalLootItem();
@@ -1125,6 +1334,8 @@ function revealFinalLootItem() {
     try {
         const item = currentLootItem;
         if (!item) throw new Error("Item inexistente.");
+
+        SoundFX.lootReveal(Boolean(item.rarity?.isGod));
         
         normalContent.classList.remove('hidden');
         errorContent.classList.add('hidden');
@@ -1169,6 +1380,8 @@ function revealFinalLootItem() {
 }
 
 function closeLootbox() {
+    SoundFX.click();
+    isRouletteSpinning = false;
     document.getElementById('lootbox-modal').classList.add('hidden');
     if (player.xp >= player.maxXp) processLevelUp();
 }
@@ -1239,6 +1452,7 @@ const DOM = {
     level: document.getElementById('player-level'),
     nameDisplay: document.getElementById('player-name-display'),
     architectBadge: document.getElementById('architect-badge'),
+    streakText: document.getElementById('player-streak'),
     rank: document.getElementById('player-rank'),
     xpBar: document.getElementById('xp-bar'),
     xpText: document.getElementById('xp-text'),
@@ -1252,6 +1466,7 @@ const DOM = {
 };
 
 function init() {
+    updateSoundButtonUI();
     renderTabs();
     renderCategory(activeCategoryId);
     renderPeriodicQuests();
@@ -1264,6 +1479,7 @@ function init() {
 function updatePlayerUI() {
     DOM.level.innerText = `L${player.level}`;
     DOM.nameDisplay.innerText = `Player: ${player.username}`;
+    if (DOM.streakText) DOM.streakText.innerText = player.streak || 0;
 
     if (DOM.architectBadge) {
         if (player.isAdmin) DOM.architectBadge.classList.remove('hidden');
@@ -1294,6 +1510,7 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
 
     if (task.dificuldade === 'Extremo' && task.subtarefas && task.subtarefas.length > 0) {
         if (!task.subtarefas.every(st => st.done)) {
+            SoundFX.error();
             showSystemNotification('Conclua todas as subtarefas antes de finalizar uma missão Extrema!', 'error');
             renderCategory(activeCategoryId);
             return;
@@ -1301,6 +1518,7 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
     }
 
     task.done = true;
+    SoundFX.questComplete();
 
     if (listType === 'category' && categoryId !== 'admin' && categoryTallies[categoryId] !== undefined) {
         categoryTallies[categoryId]++;
@@ -1315,7 +1533,6 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
     player.xp += xp;
     if (player.xp >= player.maxXp) setTimeout(processLevelUp, 300);
 
-    // Verifica exclusivamente a lista onde a missão foi concluída!
     checkLootboxTriggers(listType, categoryId);
 
     updatePlayerUI();
@@ -1339,6 +1556,7 @@ async function handleSubtaskToggle(taskId, subIdx, listType, categoryId = null) 
     if (task.subtarefas[subIdx].done) return;
 
     task.subtarefas[subIdx].done = true;
+    SoundFX.click();
 
     if (task.subtarefas.every(st => st.done)) {
         showSystemNotification(`Todas as etapas concluídas! Missão Extrema finalizada (+${task.xp} XP)!`, 'success');
@@ -1352,6 +1570,8 @@ async function handleSubtaskToggle(taskId, subIdx, listType, categoryId = null) 
 
 function processLevelUp() {
     if (player.xp < player.maxXp) return;
+    SoundFX.levelUp();
+
     const oldLvl = player.level;
     player.level++;
     player.xp = Math.max(0, player.xp - player.maxXp);
@@ -1400,6 +1620,7 @@ function processLevelUp() {
 }
 
 function closeLevelUpModal() {
+    SoundFX.click();
     DOM.modal.classList.add('hidden');
     if (player.xp >= player.maxXp) setTimeout(processLevelUp, 400); 
 }
@@ -1437,6 +1658,7 @@ function renderTabs() {
             ${taskCount ? `<span class="text-xs bg-blue-900 bg-opacity-40 text-blue-300 px-1.5 py-0.5 rounded border border-blue-800">${taskCount}</span>` : ''}
         `;
         btn.onclick = () => {
+            SoundFX.click();
             activeCategoryId = key;
             renderTabs();
             renderCategory(key);
@@ -1446,10 +1668,11 @@ function renderTabs() {
 }
 
 function toggleCompletedAccordion(sectionKey) {
+    SoundFX.click();
     const current = collapsedCompletedState[sectionKey] !== undefined ? collapsedCompletedState[sectionKey] : true;
     collapsedCompletedState[sectionKey] = !current;
     renderCategory(activeCategoryId);
-}
+        }
 
 function createCompletedAccordionElement(completedTasks, sectionKey, isReadOnlyOverview = false) {
     const isCollapsed = collapsedCompletedState[sectionKey] !== undefined ? collapsedCompletedState[sectionKey] : true;
@@ -1619,7 +1842,7 @@ async function renderLeaderboard() {
     try {
         const { data: hunters, error } = await supabaseClient
             .from('players')
-            .select('id, username, level, rank, player_class, power, xp, is_admin')
+            .select('*')
             .order('level', { ascending: false })
             .order('power', { ascending: false })
             .order('xp', { ascending: false })
@@ -1657,6 +1880,7 @@ async function renderLeaderboard() {
             const isMe = currentUser && h.id === currentUser.id;
             const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
             const rColor = rankBadgeColors[h.rank] || 'border-gray-500 text-gray-300';
+            const hunterStreak = h.streak ?? h.reset_timestamps?.streak_count ?? 0;
 
             html += `
                 <div class="flex items-center justify-between p-3 rounded border ${isMe ? 'bg-blue-950 bg-opacity-40 border-cyan-400 shadow-[0_0_12px_rgba(0,212,255,0.2)]' : 'bg-gray-900 bg-opacity-50 border-blue-900 border-opacity-30'}">
@@ -1670,6 +1894,7 @@ async function renderLeaderboard() {
                                 ${h.is_admin ? '<span class="text-[9px] bg-purple-950 text-purple-300 border border-purple-500 px-1.5 py-0.2 rounded uppercase font-bold">👑 Arquiteto</span>' : ''}
                                 ${isMe ? '<span class="text-[10px] bg-cyan-900 text-cyan-200 px-1.5 py-0.2 rounded uppercase font-bold">Você</span>' : ''}
                                 <span class="text-[10px] font-bold px-1.5 py-0.2 rounded border ${rColor}">Rank ${h.rank || 'E'}</span>
+                                ${hunterStreak > 0 ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-orange-950/80 border border-orange-500/60 text-orange-300">🔥 ${hunterStreak}d</span>` : ''}
                             </div>
                             <div class="text-xs text-gray-400">
                                 Classe: <span class="text-purple-300">${h.player_class || 'Nenhuma'}</span>
@@ -1826,7 +2051,7 @@ function renderAdminPanel() {
                 </div>
             `}
 
-            <!-- 3. Configurações de Conta e Testes Visuais -->
+            <!-- 3. Configurações de Conta e Testes de Áudio/Visuais -->
             <div class="bg-black bg-opacity-50 p-4 rounded border border-gray-800 space-y-4">
                 <div>
                     <label class="block text-gray-400 text-xs mb-2 uppercase">Identidade do Caçador no Ranking</label>
@@ -1847,7 +2072,7 @@ function renderAdminPanel() {
                             🔄 Sincronizar
                         </button>
                         <button onclick="openPenaltyModalUI()" class="flex-1 md:flex-initial px-3 py-2 border border-red-600 text-red-400 hover:bg-red-950 rounded text-xs uppercase font-bold">
-                            💀 Ver Tela de Penalidade
+                            💀 Ver Penalidade
                         </button>
                         <button onclick="triggerAwakeningScreenManual()" class="flex-1 md:flex-initial px-3 py-2 border border-purple-600 text-purple-400 hover:bg-purple-950 rounded text-xs uppercase font-bold">
                             ⚡ Tela Inicial
@@ -1867,6 +2092,7 @@ function renderAdminPanel() {
 }
 
 function toggleSubtasksBuilder() {
+    SoundFX.click();
     const diff = document.getElementById('admin-task-difficulty')?.value;
     const container = document.getElementById('subtasks-builder-container');
     if (!container) return;
@@ -1878,6 +2104,7 @@ function toggleSubtasksBuilder() {
 }
 
 function addSubtaskInputRow() {
+    SoundFX.click();
     const list = document.getElementById('subtasks-inputs-list');
     if (!list) return;
     const count = list.querySelectorAll('.subtask-input-row').length + 1;
@@ -1941,6 +2168,7 @@ async function loadMasterPendingQueue() {
 
 async function approveQuestMaster(questId) {
     if (!player.isAdmin) return;
+    SoundFX.questComplete();
     try {
         const { error } = await supabaseClient
             .from('quests')
@@ -1956,6 +2184,7 @@ async function approveQuestMaster(questId) {
 
 async function rejectQuestMaster(questId) {
     if (!player.isAdmin) return;
+    SoundFX.click();
     try {
         const { error } = await supabaseClient
             .from('quests')
@@ -1973,6 +2202,7 @@ async function updateHunterName() {
     const input = document.getElementById('admin-hunter-name');
     const newName = input?.value.trim();
     if (!newName) return;
+    SoundFX.click();
     player.username = newName;
     updatePlayerUI();
     await savePlayerToSupabase();
@@ -1987,6 +2217,7 @@ async function handleAdminSubmit() {
     
     const text = nameInput.value.trim();
     if (!text) {
+        SoundFX.error();
         showSystemNotification('Digite o título da missão.', 'error');
         return;
     }
@@ -2003,6 +2234,7 @@ async function handleAdminSubmit() {
             }
         });
         if (subtarefas.length < 2) {
+            SoundFX.error();
             showSystemNotification('Missões de nível Extremo exigem pelo menos 2 subtarefas preenchidas!', 'error');
             return;
         }
@@ -2034,6 +2266,7 @@ async function handleAdminSubmit() {
     btn.innerText = oldText;
 
     if (inserted) {
+        SoundFX.questComplete();
         const newTask = mapRowToTaskObj(inserted);
         if (targetCatId) {
             categories[targetCatId].tasks.push(newTask);
@@ -2057,6 +2290,7 @@ async function handleAdminSubmit() {
             showSystemNotification(`Requisição enviada! Aguardando aprovação do Arquiteto.`, 'success');
         }
     } else {
+        SoundFX.error();
         showSystemNotification(`Erro ao registrar missão.`, 'error');
     }
 }
