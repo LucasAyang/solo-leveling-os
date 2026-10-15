@@ -9,13 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Life OS">
     <title>Life OS</title>
 
-    <!-- Ícone da Aba do Navegador (com ?v=2 para limpar o cache) e PWA Manifest -->
+    <!-- Ícone da Aba do Navegador e PWA Manifest -->
     <link rel="icon" type="image/svg+xml" href="icon.svg?v=2">
     <link rel="apple-touch-icon" href="icon.svg?v=2">
     <link rel="manifest" href="manifest.json?v=2">
-    
-    <!-- PWA Manifest (Etapa 1.3) -->
-    <link rel="manifest" href="manifest.json">
 
     <!-- Tailwind CSS, Supabase SDK & Google Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -222,13 +219,13 @@
 
     <!-- Header: Status do Jogador -->
     <header class="sys-panel p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start flex-wrap">
             <div class="flex items-center gap-4">
                 <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center bg-gray-900 shadow-[0_0_10px_rgba(0,212,255,0.5)]">
                     <span class="text-2xl font-bold text-glow" id="player-level">L1</span>
                 </div>
                 <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <h1 class="text-2xl font-bold text-glow uppercase tracking-wider" id="player-name-display">Player: ---</h1>
                         <span id="architect-badge" class="hidden text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500 shadow-[0_0_8px_rgba(179,136,255,0.4)]">
                             👑 Arquiteto
@@ -237,9 +234,26 @@
                     <div class="text-sm text-blue-300 opacity-80" id="player-rank">Classe: Nenhuma | Rank: E</div>
                 </div>
             </div>
-            <div class="flex items-center gap-2 px-3 py-1 rounded bg-black bg-opacity-50 border border-gray-800 text-xs">
-                <span id="sync-led" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
-                <span id="sync-text" class="text-gray-400 font-mono">Conectando...</span>
+
+            <!-- Indicadores de Ofensiva (Streak), Som e Conexão -->
+            <div class="flex items-center gap-2">
+                <!-- Contador de Ofensiva Diária -->
+                <div id="streak-badge" title="Ofensiva Diária: Dias consecutivos completando todas as Daily Quests" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-950/60 border border-orange-500/60 text-xs font-bold text-orange-300 shadow-[0_0_10px_rgba(249,115,22,0.2)]">
+                    <span class="text-sm">🔥</span>
+                    <span id="player-streak">0</span>
+                    <span class="text-[10px] uppercase tracking-wider text-orange-400/90 hidden sm:inline">Dias</span>
+                </div>
+
+                <!-- Botão Mute / Unmute SFX -->
+                <button id="sound-toggle-btn" onclick="toggleSoundFX()" title="Ativar/Desativar Efeitos Sonoros do Sistema" class="px-2.5 py-1 rounded bg-black/60 border border-blue-900 hover:border-cyan-400 text-xs text-cyan-300 transition-all">
+                    🔊
+                </button>
+
+                <!-- Status do Supabase Cloud -->
+                <div class="flex items-center gap-2 px-3 py-1 rounded bg-black bg-opacity-50 border border-gray-800 text-xs">
+                    <span id="sync-led" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                    <span id="sync-text" class="text-gray-400 font-mono hidden sm:inline">Conectando...</span>
+                </div>
             </div>
         </div>
 
@@ -413,7 +427,7 @@
     </main>
 
     <footer class="text-center text-[10px] text-blue-900 opacity-60 mt-2">
-        System Integration Status: Supabase RLS Security + Modular Architecture | Solo Leveling OS v7.0
+        System Integration Status: Supabase RLS + Web Audio Synth + Streak Engine | Life OS v7.5
     </footer>
 
     <!-- Lógica Modular do Sistema -->
