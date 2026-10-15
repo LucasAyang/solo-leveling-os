@@ -5,7 +5,7 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#050505",
+  "background_color": "#050811",
   "theme_color": "#00d4ff",
   "orientation": "portrait-primary",
   "icons": [
@@ -19,7 +19,7 @@
       "src": "./icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ]
 }
