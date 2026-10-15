@@ -10,12 +10,15 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const LEGACY_STORAGE_KEY = 'soloLevelingOS_Save_v4';
 const AWAKENING_SESSION_KEY = 'soloLevelingOS_Awakened_Session';
 
+// Quantidades obrigatórias para liberar as Lootboxes
+const DAILY_QUOTA = 4;
+const WEEKLY_QUOTA = 3;
+const CATEGORY_MIN_QUOTA = 3;
+
 /**
  * ==========================================
  * MOTOR DE IMAGENS PERSONALIZADAS (ASSET REGISTRY)
  * ==========================================
- * Basta colar as URLs (ou caminhos locais, ex: "img/espada_divina.png") abaixo.
- * Se deixar em branco (""), o sistema usa os ícones padrão automaticamente!
  */
 const CONFIG_IMAGENS = {
     personagem: {
@@ -163,6 +166,7 @@ let currentUser = null;
 let authMode = 'login';
 let preselectedCategoryForRequest = null;
 let collapsedCompletedState = {};
+let isSyncingSupabase = false;
 
 let player = {
     username: "Caçador",
@@ -172,7 +176,7 @@ let player = {
     power: 0,
     rank: "E",
     playerClass: "Nenhuma",
-    isAdmin: false, // Validado direto do servidor Supabase (coluna is_admin)
+    isAdmin: false,
     equipment: { capacete: null, peitoral: null, botas: null, capa: null, arma_principal: null, arma_secundaria: null }
 };
 
@@ -231,7 +235,7 @@ const periodicQuests = {
     'weekly': { list: [], boxClaimed: false },
     'monthly': { list: [], boxClaimed: false },
     'yearly': { list: [], boxClaimed: false }
-        };
+};
 
 /**
  * ==========================================
@@ -270,7 +274,9 @@ async function acceptAwakening() {
         setTimeout(async () => {
             screen.classList.add('hidden');
             box.classList.remove('system-boot-out');
-            await syncAllFromSupabase(false);
+            if (!isSyncingSupabase && periodicQuests.daily.list.length === 0) {
+                await syncAllFromSupabase(false);
+            }
             showSystemNotification(`Bem-vindo de volta, Caçador ${player.username}.`, 'success');
         }, 420);
     } else {
@@ -447,11 +453,12 @@ function updatePenaltyCountdownDisplay() {
     el.innerText = `${h} HOURS, ${m} MINUTES, ${s} SECONDS`;
 }
 
+// Gera um ciclo totalmente novo (no reset diário ou semanal)
 async function generateRandomPeriodicQuests(periodType) {
     if (!currentUser) return;
     const isDaily = periodType === 'daily';
     const pool = isDaily ? DAILY_HABITS_POOL : WEEKLY_HABITS_POOL;
-    const count = isDaily ? 4 : 3;
+    const count = isDaily ? DAILY_QUOTA : WEEKLY_QUOTA;
     const lastCodesKey = isDaily ? 'last_daily_codes' : 'last_weekly_codes';
     const lastCodes = Array.isArray(resetTimestamps[lastCodesKey]) ? resetTimestamps[lastCodesKey] : [];
 
@@ -496,6 +503,61 @@ async function generateRandomPeriodicQuests(periodType) {
     ];
     periodicQuests[periodType].boxClaimed = false;
     updateBoxIcon(periodType, false);
+}
+
+// Completa a lista caso o jogador tenha menos de 4 Dailies ou menos de 3 Weeklies (sem apagar as atuais)
+async function topUpPeriodicQuests(periodType) {
+    if (!currentUser) return false;
+    const isDaily = periodType === 'daily';
+    const targetQuota = isDaily ? DAILY_QUOTA : WEEKLY_QUOTA;
+    const pool = isDaily ? DAILY_HABITS_POOL : WEEKLY_HABITS_POOL;
+    const lastCodesKey = isDaily ? 'last_daily_codes' : 'last_weekly_codes';
+
+    const currentNonPenalty = periodicQuests[periodType].list.filter(t => !t.isPenalty);
+    if (currentNonPenalty.length >= targetQuota) return false;
+
+    const missingCount = targetQuota - currentNonPenalty.length;
+    const existingTexts = currentNonPenalty.map(t => normalizeStr(t.text));
+    const lastCodes = Array.isArray(resetTimestamps[lastCodesKey]) ? resetTimestamps[lastCodesKey] : [];
+
+    let available = pool.filter(item => 
+        !existingTexts.includes(normalizeStr(item.text)) && !lastCodes.includes(item.code)
+    );
+    if (available.length < missingCount) {
+        available = pool.filter(item => !existingTexts.includes(normalizeStr(item.text)));
+    }
+
+    for (let i = available.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [available[i], available[j]] = [available[j], available[i]];
+    }
+
+    const selected = available.slice(0, missingCount);
+    if (selected.length === 0) return false;
+
+    resetTimestamps[lastCodesKey] = [...new Set([...lastCodes, ...selected.map(s => s.code)])];
+
+    const newRows = selected.map(s => ({
+        user_id: currentUser.id,
+        username: player.username,
+        quest: s.text,
+        categoria: 'Saúde',
+        tipo: isDaily ? 'Daily' : 'Weekly',
+        dificuldade: s.diff,
+        xp: rollXpForDifficulty(s.diff),
+        concluida: false,
+        aprovada: true,
+        subtarefas: []
+    }));
+
+    const { data: inserted } = await supabaseClient.from('quests').insert(newRows).select();
+    if (inserted && inserted.length > 0) {
+        inserted.forEach(row => periodicQuests[periodType].list.push(mapRowToTaskObj(row)));
+        periodicQuests[periodType].boxClaimed = false;
+        updateBoxIcon(periodType, false);
+        return true;
+    }
+    return false;
 }
 
 async function applyDailyPenalty() {
@@ -574,6 +636,7 @@ function applyBoxesClaimedObject(boxes) {
 
 function mapRowToTaskObj(row) {
     const normTipo = normalizeStr(row.tipo);
+    const isDailyOrWeekly = normTipo.includes('daily') || normTipo.includes('diaria') || normTipo.includes('weekly') || normTipo.includes('semanal') || normTipo.includes('penalty');
     return {
         id: row.id,
         text: String(row.quest).trim(),
@@ -581,7 +644,8 @@ function mapRowToTaskObj(row) {
         done: Boolean(row.concluida),
         dificuldade: row.dificuldade || 'Fácil',
         subtarefas: Array.isArray(row.subtarefas) ? row.subtarefas : [],
-        aprovada: row.aprovada !== undefined ? Boolean(row.aprovada) : true,
+        // Dailies e Weeklies do sistema são sempre aprovadas por padrão
+        aprovada: isDailyOrWeekly ? true : (row.aprovada !== undefined ? Boolean(row.aprovada) : true),
         isPenalty: normTipo.includes('penalty') || String(row.quest).includes('[PENALIDADE]')
     };
 }
@@ -627,7 +691,8 @@ async function ensurePlayerProfile(preferredUsername = null) {
 }
 
 async function syncAllFromSupabase(isManual = false) {
-    if (!currentUser) return;
+    if (!currentUser || isSyncingSupabase) return;
+    isSyncingSupabase = true;
     setSyncStatus('syncing');
 
     try {
@@ -680,18 +745,14 @@ async function syncAllFromSupabase(isManual = false) {
             }
         });
 
-        let generatedNew = false;
-        if (periodicQuests.daily.list.filter(t => !t.isPenalty).length === 0) {
-            await generateRandomPeriodicQuests('daily');
-            generatedNew = true;
-        }
-        if (periodicQuests.weekly.list.length === 0) {
-            await generateRandomPeriodicQuests('weekly');
-            generatedNew = true;
-        }
-        if (generatedNew) await savePlayerToSupabase();
-
+        // 1. Primeiro verifica se o dia ou a semana virou em relação ao último acesso
         await checkPeriodicResets(new Date());
+
+        // 2. Garante que todo jogador tenha sempre as 4 Daily Quests e 3 Weekly Quests completas
+        let toppedUp = false;
+        if (await topUpPeriodicQuests('daily')) toppedUp = true;
+        if (await topUpPeriodicQuests('weekly')) toppedUp = true;
+        if (toppedUp) await savePlayerToSupabase();
 
         if (periodicQuests.daily.list.some(t => t.isPenalty && !t.done)) {
             openPenaltyModalUI([
@@ -713,6 +774,8 @@ async function syncAllFromSupabase(isManual = false) {
         console.error("Erro ao sincronizar:", err);
         setSyncStatus('offline');
         if (isManual) showSystemNotification('Erro ao comunicar com o servidor.', 'error');
+    } finally {
+        isSyncingSupabase = false;
     }
 }
 
@@ -911,7 +974,7 @@ function jumpToCategory(catKey) {
 
 /**
  * ==========================================
- * SISTEMA DE LOOT & ROLETA CS:GO
+ * SISTEMA DE LOOT & ROLETA CS:GO (BLINDADO)
  * ==========================================
  */
 const equipSlots = ['capacete', 'peitoral', 'botas', 'capa', 'arma_principal', 'arma_secundaria'];
@@ -942,31 +1005,40 @@ let currentLootItem = null;
 let currentLootBoxType = 'daily';
 let isRouletteSpinning = false;
 
-function checkLootboxTriggers() {
-    ['daily', 'weekly', 'monthly', 'yearly'].forEach(type => {
-        const group = periodicQuests[type];
-        const approvedTasks = group.list.filter(t => t.aprovada && !t.isPenalty);
-        if (approvedTasks.length > 0 && !group.boxClaimed) {
-            if (approvedTasks.every(t => t.done)) {
-                group.boxClaimed = true;
-                updateBoxIcon(type, true);
-                initiateLootbox(type);
-            }
-        }
-    });
+// Verifica exclusivamente a lista onde a missão acabou de ser concluída e exige a cota completa!
+function checkLootboxTriggers(completedListType, completedCategoryId = null) {
+    if (['daily', 'weekly', 'monthly', 'yearly'].includes(completedListType)) {
+        const group = periodicQuests[completedListType];
+        if (!group || group.boxClaimed) return;
 
-    Object.keys(categories).forEach(catId => {
-        const cat = categories[catId];
-        if (!cat.isSystem) {
-            const approvedTasks = cat.tasks.filter(t => t.aprovada);
-            if (approvedTasks.length > 0 && !cat.boxClaimed) {
-                if (approvedTasks.every(t => t.done)) {
-                    cat.boxClaimed = true;
-                    initiateLootbox('category', cat.title);
-                }
-            }
+        const nonPenaltyApproved = group.list.filter(t => t.aprovada && !t.isPenalty);
+        const allTasksInGroup = group.list.filter(t => t.aprovada);
+
+        const minRequired = completedListType === 'daily'
+            ? DAILY_QUOTA
+            : completedListType === 'weekly'
+                ? WEEKLY_QUOTA
+                : CATEGORY_MIN_QUOTA;
+
+        // Só libera a Box se tiver a quantidade mínima exigida E 100% das missões (incluindo penalidade) concluídas
+        if (nonPenaltyApproved.length >= minRequired && allTasksInGroup.every(t => t.done)) {
+            group.boxClaimed = true;
+            updateBoxIcon(completedListType, true);
+            initiateLootbox(completedListType);
         }
-    });
+        return;
+    }
+
+    if (completedListType === 'category' && completedCategoryId && categories[completedCategoryId]) {
+        const cat = categories[completedCategoryId];
+        if (cat.isSystem || cat.boxClaimed) return;
+
+        const approvedTasks = cat.tasks.filter(t => t.aprovada);
+        if (approvedTasks.length >= CATEGORY_MIN_QUOTA && approvedTasks.every(t => t.done)) {
+            cat.boxClaimed = true;
+            initiateLootbox('category', cat.title);
+        }
+    }
 }
 
 function initiateLootbox(boxType, customName = null) {
@@ -1242,7 +1314,9 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
 
     player.xp += xp;
     if (player.xp >= player.maxXp) setTimeout(processLevelUp, 300);
-    checkLootboxTriggers();
+
+    // Verifica exclusivamente a lista onde a missão foi concluída!
+    checkLootboxTriggers(listType, categoryId);
 
     updatePlayerUI();
     renderTabs();
