@@ -10,10 +10,16 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='90' fill='%23050811'/><rect x='28' y='28' width='456' height='456' rx='70' fill='none' stroke='%2300d4ff' stroke-width='16'/><circle cx='256' cy='256' r='150' fill='none' stroke='%23ffffff' stroke-width='18'/><path d='M256 160 v115 M256 330 v20' stroke='%2300d4ff' stroke-width='28' stroke-linecap='round'/></svg>",
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ]
 }
