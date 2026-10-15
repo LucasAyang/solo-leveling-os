@@ -460,16 +460,16 @@
                 <!-- Detalhes Reais da Punição no Sistema -->
                 <div id="penalty-modal-details" class="w-full bg-black/60 border border-teal-500/40 rounded p-3 text-xs text-teal-100 font-mono text-left space-y-1.5 shadow-inner">
                     <div>• Falha detectada nas Daily Quests do ciclo anterior.</div>
-                    <div>• Conclua a missão de sobrevivência na aba Daily Quests para restaurar seus acessos.</div>
+                    <div>• Conclua a missão de sobrevivência na aba Daily Quests antes da virada do dia (00:00).</div>
                 </div>
 
-                <!-- Cronômetro Regressivo de 4 Horas (Igual ao Anime) -->
+                <!-- Cronômetro Regressivo Sincronizado até a Meia-Noite (00:00) -->
                 <div class="pt-2 space-y-1 font-bold uppercase tracking-wider">
                     <div class="text-lg md:text-xl text-white">
-                        ALLOTTED TIME: <span class="text-teal-200">4 HOURS</span>
+                        ALLOTTED TIME: <span class="text-teal-200">UNTIL MIDNIGHT (00:00)</span>
                     </div>
                     <div class="text-lg md:text-xl text-white">
-                        TIME LEFT: <span id="penalty-live-countdown" class="text-glow-red">3 HOURS, 59 MINUTES, 57 SECONDS</span>
+                        TIME LEFT: <span id="penalty-live-countdown" class="text-glow-red">0 HOURS, 0 MINUTES, 0 SECONDS</span>
                     </div>
                 </div>
 
@@ -735,7 +735,7 @@
     </main>
 
     <footer class="text-center text-[10px] text-blue-900 opacity-60 mt-2">
-        System Integration Status: Supabase PostgreSQL Realtime Engine | Solo Leveling OS v6.5 Master Edition
+        System Integration Status: Supabase PostgreSQL Realtime Engine | Solo Leveling OS v6.6 Master Edition
     </footer>
 
     <script>
@@ -798,7 +798,6 @@
             }
         };
 
-        // Funções auxiliares que resolvem automaticamente a imagem do equipamento ou personagem
         function resolveEquipmentImageUrl(item) {
             if (!item) return "";
             if (item.imageUrl) return item.imageUrl;
@@ -915,8 +914,7 @@
         let authMode = 'login';
         let isMasterUnlocked = false;
         let preselectedCategoryForRequest = null;
-        let collapsedCompletedState = {}; // Controla o recolhimento das missões concluídas por aba
-        let penaltyEndTime = null;        // Controla o timer de 4 horas da tela de penalidade
+        let collapsedCompletedState = {};
 
         let player = {
             username: "Caçador",
@@ -942,8 +940,7 @@
             yearly: new Date().getFullYear(),
             last_daily_codes: [],
             last_weekly_codes: [],
-            locked_category: null,
-            penalty_end_time: null
+            locked_category: null
         };
 
         const ranks = { 1: "E", 15: "D", 30: "C", 50: "B", 75: "A", 100: "S", 150: "Nacional", 200: "Global", 250: "Monarca" };
@@ -1159,7 +1156,7 @@
 
         /**
          * ==========================================
-         * GERADOR DE HÁBITOS E TELA DE PENALIDADE (4 HORAS)
+         * GERADOR DE HÁBITOS E TELA DE PENALIDADE (ATÉ 00:00)
          * ==========================================
          */
         function openPenaltyModalUI(detailsArray = null) {
@@ -1173,12 +1170,6 @@
                 box.style.backgroundPosition = 'center';
             }
 
-            if (!resetTimestamps.penalty_end_time || resetTimestamps.penalty_end_time <= Date.now()) {
-                // Inicia 4 horas (14.400.000 ms) de sobrevivência
-                resetTimestamps.penalty_end_time = Date.now() + (4 * 60 * 60 * 1000) - 2000;
-            }
-            penaltyEndTime = resetTimestamps.penalty_end_time;
-
             if (detailsEl && Array.isArray(detailsArray) && detailsArray.length > 0) {
                 detailsEl.innerHTML = detailsArray.map(p => `<div>${p}</div>`).join('');
             }
@@ -1191,11 +1182,15 @@
             document.getElementById('penalty-modal').classList.add('hidden');
         }
 
+        // Calcula o tempo restante exatamente até a virada do dia (00:00:00)
         function updatePenaltyCountdownDisplay() {
             const el = document.getElementById('penalty-live-countdown');
             if (!el) return;
-            const target = penaltyEndTime || resetTimestamps.penalty_end_time || (Date.now() + 14397000);
-            const diff = Math.max(0, target - Date.now());
+
+            const now = new Date();
+            const nextMidnight = new Date(now);
+            nextMidnight.setHours(24, 0, 0, 0);
+            const diff = Math.max(0, nextMidnight - now);
 
             const h = Math.floor(diff / (1000 * 60 * 60));
             const m = Math.floor((diff / (1000 * 60)) % 60);
@@ -1277,7 +1272,6 @@
             const mainCatKeys = Object.keys(categories).filter(k => !categories[k].isSystem);
             const randomCatKey = mainCatKeys[Math.floor(Math.random() * mainCatKeys.length)];
             resetTimestamps.locked_category = randomCatKey;
-            resetTimestamps.penalty_end_time = Date.now() + (4 * 60 * 60 * 1000);
             penaltiesApplied.push(`• Categoria Bloqueada: [${categories[randomCatKey].title}] 🔒`);
 
             // 3. Injeção da Missão de Sobrevivência (Penalidade)
@@ -1458,7 +1452,7 @@
                     openPenaltyModalUI([
                         `• Você possui uma [PENALTY QUEST: SURVIVAL] ativa!`,
                         `• Categoria Bloqueada: [${categories[resetTimestamps.locked_category]?.title || 'Nenhuma'}] 🔒`,
-                        `• Conclua a missão de sobrevivência na aba Daily Quests para liberar seus acessos.`
+                        `• Conclua a missão de sobrevivência na aba Daily Quests antes das 00:00 para liberar seus acessos.`
                     ]);
                 }
 
@@ -1991,7 +1985,6 @@
             if (task.isPenalty) {
                 const unlockedCat = categories[resetTimestamps.locked_category]?.title || 'Categoria';
                 resetTimestamps.locked_category = null;
-                resetTimestamps.penalty_end_time = null;
                 showSystemNotification(`Penalidade cumprida! Acesso à categoria [${unlockedCat}] restaurado!`, 'success');
             }
 
@@ -2182,7 +2175,6 @@
                 }
             });
 
-            // Aviso informativo do Modo Somente Visualização
             const infoBanner = document.createElement('li');
             infoBanner.className = 'p-3 rounded bg-blue-950/30 border border-cyan-800/50 text-xs text-cyan-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-2';
             infoBanner.innerHTML = `
@@ -2246,7 +2238,6 @@
                 return;
             }
 
-            // Verifica se esta categoria foi bloqueada pelo Sistema de Penalidade
             if (resetTimestamps.locked_category === categoryId) {
                 DOM.catList.innerHTML = `
                     <div class="p-8 border-2 border-red-600 bg-red-950 bg-opacity-30 rounded-lg text-center space-y-3 my-4">
@@ -2282,7 +2273,6 @@
                 });
             }
 
-            // Seção recolhível para missões concluídas (evita poluir a lista)
             if (completedTasks.length > 0) {
                 DOM.catList.appendChild(createCompletedAccordionElement(completedTasks, categoryId, false));
             }
@@ -2849,7 +2839,6 @@
 
             li.appendChild(topRow);
 
-            // Renderiza Subtarefas caso seja uma missão Extrema
             if (isExtremeWithSubs) {
                 const subList = document.createElement('div');
                 subList.className = 'pl-7 pt-1 space-y-1.5 border-t border-gray-800 mt-1';
@@ -2957,7 +2946,7 @@
                 checkPeriodicResets(now);
             }
 
-            // Atualiza também o cronômetro ao vivo da janela de Penalidade (4 Horas)
+            // Atualiza o cronômetro ao vivo da janela de Penalidade até a meia-noite (00:00)
             updatePenaltyCountdownDisplay();
             
             const nextDay = new Date(now); nextDay.setHours(24, 0, 0, 0);
