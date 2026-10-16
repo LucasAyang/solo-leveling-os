@@ -16,6 +16,9 @@ const DAILY_QUOTA = 4;
 const WEEKLY_QUOTA = 3;
 const CATEGORY_MIN_QUOTA = 3;
 
+// Intervalo de sincronização automática silenciosa (12 segundos)
+const AUTO_SYNC_INTERVAL_MS = 12000;
+
 /**
  * ==========================================
  * SINTETIZADOR DE ÁUDIO NATIVO (WEB AUDIO API)
@@ -64,33 +67,27 @@ const SoundFX = {
         } catch (e) {}
     },
 
-    // Clique sutil de interface e troca de abas
     click() {
         this.playTone(900, 'sine', 0.035, 0.05, 0, 600);
     },
 
-    // Som de inicialização na tela NOTIFICATION ("Yes")
     boot() {
         this.playTone(220, 'sawtooth', 0.18, 0.08, 0, 880);
         this.playTone(880, 'sine', 0.35, 0.12, 0.15, 1760);
     },
 
-    // Som cristalino ao concluir uma missão ou subtarefa
     questComplete() {
         this.playTone(587.33, 'triangle', 0.12, 0.12, 0);     // D5
         this.playTone(880.00, 'triangle', 0.25, 0.14, 0.09);  // A5
         this.playTone(1174.66, 'sine', 0.35, 0.10, 0.18);     // D6
     },
 
-    // "Tec-tec" mecânico da Roleta CS:GO a cada card que cruza o laser
     rouletteTick() {
         this.playTone(1350, 'triangle', 0.022, 0.09, 0, 420);
     },
 
-    // Revelação do Equipamento da Lootbox
     lootReveal(isGod = false) {
         if (isGod) {
-            // Acorde celestial/dimensional para Divino, Hack e Break System
             [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => {
                 this.playTone(f, 'sawtooth', 0.75, 0.08, i * 0.055);
                 this.playTone(f * 1.5, 'sine', 0.85, 0.06, i * 0.055);
@@ -102,7 +99,6 @@ const SoundFX = {
         }
     },
 
-    // Fanfarra de Level Up
     levelUp() {
         const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.51];
         notes.forEach((f, idx) => {
@@ -110,13 +106,11 @@ const SoundFX = {
         });
     },
 
-    // Alarme da Zona de Penalidade e erro
     penaltyAlarm() {
         this.playTone(190, 'sawtooth', 0.3, 0.14, 0, 130);
         this.playTone(190, 'sawtooth', 0.35, 0.14, 0.35, 120);
     },
 
-    // Alerta rápido de erro/bloqueio
     error() {
         this.playTone(240, 'sawtooth', 0.12, 0.1, 0, 160);
     }
@@ -295,6 +289,10 @@ let authMode = 'login';
 let preselectedCategoryForRequest = null;
 let collapsedCompletedState = {};
 let isSyncingSupabase = false;
+let hasInitialSyncCompleted = false;
+let hasShownPenaltyModalThisSession = false;
+let lastAutoSyncTime = 0;
+let realtimeChannel = null;
 
 let player = {
     username: "Caçador",
@@ -380,6 +378,7 @@ async function checkInitialAuthAndAwakening() {
     if (session && session.user) {
         currentUser = session.user;
         await syncAllFromSupabase(false);
+        setupRealtimeSubscriptions();
 
         if (sessionStorage.getItem(AWAKENING_SESSION_KEY) === 'true') {
             screen.classList.add('hidden');
@@ -406,8 +405,9 @@ async function acceptAwakening() {
         setTimeout(async () => {
             screen.classList.add('hidden');
             box.classList.remove('system-boot-out');
-            if (!isSyncingSupabase && periodicQuests.daily.list.length === 0) {
+            if (!hasInitialSyncCompleted) {
                 await syncAllFromSupabase(false);
+                setupRealtimeSubscriptions();
             }
             showSystemNotification(`Bem-vindo de volta, Caçador ${player.username}.`, 'success');
         }, 420);
@@ -498,6 +498,7 @@ async function handleAuthSubmit(e) {
         }
 
         await syncAllFromSupabase(false);
+        setupRealtimeSubscriptions();
         SoundFX.boot();
 
         const screen = document.getElementById('awakening-screen');
@@ -522,6 +523,10 @@ async function handleAuthSubmit(e) {
 
 async function handleLogout() {
     SoundFX.click();
+    if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+    }
     await supabaseClient.auth.signOut();
     sessionStorage.removeItem(AWAKENING_SESSION_KEY);
     location.reload();
@@ -546,6 +551,33 @@ function triggerAwakeningScreenManual() {
     noBtn.onclick = rejectAwakening;
     noBtn.classList.remove('text-glow', 'text-white');
     screen.classList.remove('hidden');
+}
+
+/**
+ * ==========================================
+ * MOTOR DE SINCRONIZAÇÃO AUTOMÁTICA & REALTIME
+ * ==========================================
+ */
+function setupRealtimeSubscriptions() {
+    if (!currentUser || realtimeChannel) return;
+
+    try {
+        realtimeChannel = supabaseClient
+            .channel('system-os-realtime-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'quests' }, () => {
+                if (!isSyncingSupabase && !isProcessingReset && !isRouletteSpinning) {
+                    syncAllFromSupabase(true);
+                }
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `id=eq.${currentUser.id}` }, () => {
+                if (!isSyncingSupabase && !isProcessingReset && !isRouletteSpinning) {
+                    syncAllFromSupabase(true);
+                }
+            })
+            .subscribe();
+    } catch (e) {
+        console.warn("Realtime fallback para polling ativo:", e);
+    }
 }
 
 /**
@@ -616,6 +648,13 @@ async function generateRandomPeriodicQuests(periodType) {
     const oldIds = periodicQuests[periodType].list
         .filter(t => !t.isPenalty)
         .map(t => t.id);
+
+    // Deleta direto no banco todas as missões do período daquele usuário (evita duplicação entre PC e Celular)
+    await supabaseClient
+        .from('quests')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('tipo', isDaily ? 'Daily' : 'Weekly');
 
     if (oldIds.length > 0) {
         await supabaseClient.from('quests').delete().in('id', oldIds);
@@ -750,6 +789,7 @@ async function applyDailyPenalty() {
     }
     penaltiesApplied.push(`• Missão: "${penaltyText}" adicionada às Daily Quests!`);
 
+    hasShownPenaltyModalThisSession = true;
     openPenaltyModalUI(penaltiesApplied);
 }
 
@@ -794,7 +834,8 @@ function mapRowToTaskObj(row) {
         dificuldade: row.dificuldade || 'Fácil',
         subtarefas: Array.isArray(row.subtarefas) ? row.subtarefas : [],
         aprovada: isDailyOrWeekly ? true : (row.aprovada !== undefined ? Boolean(row.aprovada) : true),
-        isPenalty: normTipo.includes('penalty') || String(row.quest).includes('[PENALIDADE]')
+        isPenalty: normTipo.includes('penalty') || String(row.quest).includes('[PENALIDADE]'),
+        created_at: row.created_at || null
     };
 }
 
@@ -839,10 +880,11 @@ async function ensurePlayerProfile(preferredUsername = null) {
     return inserted || newProfile;
 }
 
-async function syncAllFromSupabase(isManual = false) {
-    if (!currentUser || isSyncingSupabase) return;
+async function syncAllFromSupabase(isSilent = false) {
+    if (!currentUser || isSyncingSupabase || isProcessingReset || isRouletteSpinning) return;
     isSyncingSupabase = true;
-    setSyncStatus('syncing');
+    lastAutoSyncTime = Date.now();
+    if (!isSilent) setSyncStatus('syncing');
 
     try {
         const profile = await ensurePlayerProfile();
@@ -898,12 +940,25 @@ async function syncAllFromSupabase(isManual = false) {
 
         await checkPeriodicResets(new Date());
 
+        // Auto-limpeza: se já existem missões Daily criadas hoje e sobraram missões antigas ou duplicadas (> 4), limpa o excesso
+        const todayStr = new Date().toDateString();
+        const currentNonPenDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
+        const todayDailies = currentNonPenDailies.filter(t => t.created_at && new Date(t.created_at).toDateString() === todayStr);
+
+        if (todayDailies.length >= DAILY_QUOTA && currentNonPenDailies.length > DAILY_QUOTA) {
+            const keepIds = new Set(todayDailies.slice(0, DAILY_QUOTA).map(t => t.id));
+            const extraIds = currentNonPenDailies.filter(t => !keepIds.has(t.id)).map(t => t.id);
+            if (extraIds.length > 0) {
+                await supabaseClient.from('quests').delete().in('id', extraIds);
+                periodicQuests.daily.list = periodicQuests.daily.list.filter(t => t.isPenalty || keepIds.has(t.id));
+            }
+        }
+
         let toppedUp = false;
         if (await topUpPeriodicQuests('daily')) toppedUp = true;
         if (await topUpPeriodicQuests('weekly')) toppedUp = true;
 
         // Se o jogador já tinha batido todas as 4 Dailies hoje antes da atualização, garante 1 de Streak!
-        const todayStr = new Date().toDateString();
         const nonPenDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
         if (nonPenDailies.length >= DAILY_QUOTA && periodicQuests.daily.list.every(t => t.done) && resetTimestamps.last_streak_date !== todayStr) {
             player.streak = Math.max(1, (player.streak || 0) + 1);
@@ -914,29 +969,38 @@ async function syncAllFromSupabase(isManual = false) {
 
         if (toppedUp) await savePlayerToSupabase();
 
-        if (periodicQuests.daily.list.some(t => t.isPenalty && !t.done)) {
+        hasInitialSyncCompleted = true;
+
+        const hasActivePenalty = periodicQuests.daily.list.some(t => t.isPenalty && !t.done);
+        if (hasActivePenalty && !hasShownPenaltyModalThisSession) {
+            hasShownPenaltyModalThisSession = true;
             openPenaltyModalUI([
                 `• Você possui uma [PENALTY QUEST: SURVIVAL] ativa!`,
                 `• Categoria Bloqueada: [${categories[resetTimestamps.locked_category]?.title || 'Nenhuma'}] 🔒`,
                 `• Conclua a missão de sobrevivência na aba Daily Quests antes das 00:00 para liberar seus acessos.`
             ]);
+        } else if (!hasActivePenalty) {
+            hasShownPenaltyModalThisSession = false;
         }
 
         updatePlayerUI();
         recalcPower();
         renderTabs();
-        renderCategory(activeCategoryId);
+
+        // Se o jogador estiver na aba Admin digitando uma missão durante o auto-sync silencioso,
+        // atualiza apenas a fila de aprovação sem limpar os inputs de texto!
+        const isTypingInAdmin = isSilent && activeCategoryId === 'admin' && document.getElementById('admin-task-name');
+        if (isTypingInAdmin) {
+            if (player.isAdmin) loadMasterPendingQueue();
+        } else {
+            renderCategory(activeCategoryId);
+        }
+
         renderPeriodicQuests();
         setSyncStatus('online');
-
-        if (isManual) {
-            SoundFX.click();
-            showSystemNotification('Sincronização concluída!', 'success');
-        }
     } catch (err) {
         console.error("Erro ao sincronizar:", err);
         setSyncStatus('offline');
-        if (isManual) showSystemNotification('Erro ao comunicar com o servidor.', 'error');
     } finally {
         isSyncingSupabase = false;
     }
@@ -973,7 +1037,6 @@ async function savePlayerToSupabase() {
             .update(updatePayload)
             .eq('id', currentUser.id);
 
-        // Fallback automático caso a coluna streak ainda não tenha sido criada no banco
         if (error) {
             delete updatePayload.streak;
             await supabaseClient.from('players').update(updatePayload).eq('id', currentUser.id);
@@ -1194,7 +1257,6 @@ function checkLootboxTriggers(completedListType, completedCategoryId = null) {
                 : CATEGORY_MIN_QUOTA;
 
         if (nonPenaltyApproved.length >= minRequired && allTasksInGroup.every(t => t.done)) {
-            // Incrementa a Ofensiva Diária (Streak) quando fecha 100% das Daily Quests do dia
             if (completedListType === 'daily') {
                 const todayStr = new Date().toDateString();
                 if (resetTimestamps.last_streak_date !== todayStr) {
@@ -1286,7 +1348,7 @@ function openLootbox() {
 
     const cardWidth = 112;
     const gap = 8;
-    const step = cardWidth + gap; // 120px por carta
+    const step = cardWidth + gap;
     const viewportWidth = viewport.clientWidth || 600;
     const jitter = Math.floor(Math.random() * 50) - 25;
     const targetOffset = (WINNING_INDEX * step) + (cardWidth / 2) - (viewportWidth / 2) + jitter;
@@ -1294,7 +1356,6 @@ function openLootbox() {
     track.style.transition = 'transform 5.2s cubic-bezier(0.08, 0.82, 0.17, 1)';
     track.style.transform = `translateX(-${targetOffset}px)`;
 
-    // Monitora em tempo real a posição física da fita para tocar o "tec" exato em cada carta que cruza o laser!
     let lastCardIndexUnderLaser = -1;
     const spinStartTime = performance.now();
 
@@ -1527,6 +1588,7 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
     if (task.isPenalty) {
         const unlockedCat = categories[resetTimestamps.locked_category]?.title || 'Categoria';
         resetTimestamps.locked_category = null;
+        hasShownPenaltyModalThisSession = false;
         showSystemNotification(`Penalidade cumprida! Acesso à categoria [${unlockedCat}] restaurado!`, 'success');
     }
 
@@ -1672,7 +1734,7 @@ function toggleCompletedAccordion(sectionKey) {
     const current = collapsedCompletedState[sectionKey] !== undefined ? collapsedCompletedState[sectionKey] : true;
     collapsedCompletedState[sectionKey] = !current;
     renderCategory(activeCategoryId);
-        }
+}
 
 function createCompletedAccordionElement(completedTasks, sectionKey, isReadOnlyOverview = false) {
     const isCollapsed = collapsedCompletedState[sectionKey] !== undefined ? collapsedCompletedState[sectionKey] : true;
@@ -2036,9 +2098,7 @@ function renderAdminPanel() {
                         <h3 class="text-purple-400 font-bold uppercase tracking-wider">
                             👑 Fila Global de Aprovação do Arquiteto
                         </h3>
-                        <button onclick="loadMasterPendingQueue()" class="text-xs text-purple-300 hover:text-white border border-purple-700 px-2 py-0.5 rounded">
-                            🔄 Atualizar Fila
-                        </button>
+                        <span class="text-[10px] text-purple-300/70 font-mono uppercase">Atualização Automática Ativa</span>
                     </div>
                     <div id="master-pending-queue" class="space-y-2">
                         <div class="text-xs text-gray-400 animate-pulse font-mono">Buscando requisições pendentes de todos os caçadores...</div>
@@ -2068,9 +2128,6 @@ function renderAdminPanel() {
                         Conta conectada: <span class="text-cyan-300 font-mono">${currentUser?.email || 'Nenhuma'}</span>
                     </div>
                     <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                        <button onclick="syncAllFromSupabase(true)" class="flex-1 md:flex-initial px-3 py-2 border border-cyan-600 text-cyan-400 hover:bg-cyan-950 rounded text-xs uppercase font-bold">
-                            🔄 Sincronizar
-                        </button>
                         <button onclick="openPenaltyModalUI()" class="flex-1 md:flex-initial px-3 py-2 border border-red-600 text-red-400 hover:bg-red-950 rounded text-xs uppercase font-bold">
                             💀 Ver Penalidade
                         </button>
@@ -2176,7 +2233,7 @@ async function approveQuestMaster(questId) {
             .eq('id', questId);
         if (error) throw error;
         showSystemNotification('Missão aprovada e liberada para o Caçador!', 'success');
-        await syncAllFromSupabase(false);
+        await syncAllFromSupabase(true);
     } catch (err) {
         showSystemNotification('Erro ao aprovar missão.', 'error');
     }
@@ -2192,7 +2249,7 @@ async function rejectQuestMaster(questId) {
             .eq('id', questId);
         if (error) throw error;
         showSystemNotification('Requisição recusada e removida.', 'success');
-        await syncAllFromSupabase(false);
+        await syncAllFromSupabase(true);
     } catch (err) {
         showSystemNotification('Erro ao recusar missão.', 'error');
     }
@@ -2279,6 +2336,7 @@ async function handleAdminSubmit() {
             }
         }
         nameInput.value = '';
+        document.querySelectorAll('.subtask-input-row').forEach(inp => { inp.value = ''; });
         renderTabs();
         renderPeriodicQuests();
         if (player.isAdmin) loadMasterPendingQueue();
@@ -2442,15 +2500,39 @@ async function checkPeriodicResets(now) {
 
     try {
         if (resetTimestamps.daily !== currentDayStr) {
-            const yesterdayDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
-            const failedYesterday = yesterdayDailies.length > 0 && yesterdayDailies.some(t => !t.done);
+            const nonPenaltyDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
 
-            resetTimestamps.daily = currentDayStr;
-            if (failedYesterday) {
-                await applyDailyPenalty();
+            // TRAVA MULTI-DISPOSITIVO: Verifica se outro aparelho (ex: Celular) já criou as missões de hoje!
+            const todayDailies = nonPenaltyDailies.filter(t => 
+                t.created_at && new Date(t.created_at).toDateString() === currentDayStr
+            );
+
+            if (todayDailies.length >= DAILY_QUOTA) {
+                // O reset de hoje já foi feito no outro dispositivo! Apenas sincroniza o timestamp e remove sobras antigas
+                resetTimestamps.daily = currentDayStr;
+                const oldDayIds = nonPenaltyDailies
+                    .filter(t => t.created_at && new Date(t.created_at).toDateString() !== currentDayStr)
+                    .map(t => t.id);
+
+                if (oldDayIds.length > 0) {
+                    await supabaseClient.from('quests').delete().in('id', oldDayIds);
+                    periodicQuests.daily.list = periodicQuests.daily.list.filter(t => !oldDayIds.includes(t.id));
+                }
+                changed = true;
+            } else {
+                // Avalia falha apenas nas missões criadas ANTES de hoje (evita falso-positivo de penalidade)
+                const yesterdayDailies = nonPenaltyDailies.filter(t => 
+                    !t.created_at || new Date(t.created_at).toDateString() !== currentDayStr
+                );
+                const failedYesterday = yesterdayDailies.length > 0 && yesterdayDailies.some(t => !t.done);
+
+                resetTimestamps.daily = currentDayStr;
+                if (failedYesterday) {
+                    await applyDailyPenalty();
+                }
+                await generateRandomPeriodicQuests('daily');
+                changed = true;
             }
-            await generateRandomPeriodicQuests('daily');
-            changed = true;
         }
 
         if (resetTimestamps.weekly !== currentWeek) {
@@ -2486,12 +2568,33 @@ async function checkPeriodicResets(now) {
 function startTimers() {
     setInterval(updateTimers, 1000);
     updateTimers();
+
+    // Polling automático silencioso a cada 12 segundos (mantém PC, Celular e Fila do Arquiteto sempre sincronizados)
+    setInterval(() => {
+        if (document.visibilityState === 'visible' && currentUser && hasInitialSyncCompleted && !isSyncingSupabase && !isProcessingReset && !isRouletteSpinning) {
+            syncAllFromSupabase(true);
+        }
+    }, AUTO_SYNC_INTERVAL_MS);
+
+    // Sincroniza imediatamente ao trocar entre Celular e PC (ou voltar para a aba)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && currentUser && !isSyncingSupabase && (Date.now() - lastAutoSyncTime > 3000)) {
+            syncAllFromSupabase(true);
+        }
+    });
+
+    window.addEventListener('focus', () => {
+        if (currentUser && !isSyncingSupabase && (Date.now() - lastAutoSyncTime > 3000)) {
+            syncAllFromSupabase(true);
+        }
+    });
 }
 
 function updateTimers() {
     const now = new Date();
-    if (currentUser && resetTimestamps.daily !== now.toDateString()) {
-        checkPeriodicResets(now);
+    // Se virar meia-noite com a tela aberta, sincroniza primeiro com o Supabase antes de rodar qualquer reset!
+    if (currentUser && hasInitialSyncCompleted && !isSyncingSupabase && !isProcessingReset && resetTimestamps.daily !== now.toDateString()) {
+        syncAllFromSupabase(true);
     }
 
     updatePenaltyCountdownDisplay();
