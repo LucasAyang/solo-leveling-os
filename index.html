@@ -249,8 +249,8 @@
                     🔊
                 </button>
 
-                <!-- Status do Supabase Cloud -->
-                <div class="flex items-center gap-2 px-3 py-1 rounded bg-black bg-opacity-50 border border-gray-800 text-xs">
+                <!-- Status do Supabase Cloud (Auto-Sync) -->
+                <div class="flex items-center gap-2 px-3 py-1 rounded bg-black bg-opacity-50 border border-gray-800 text-xs" title="Sincronização automática em tempo real ativa">
                     <span id="sync-led" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
                     <span id="sync-text" class="text-gray-400 font-mono hidden sm:inline">Conectando...</span>
                 </div>
@@ -279,7 +279,7 @@
         <aside class="sys-panel w-full md:w-64 flex-shrink-0 flex flex-col overflow-y-auto max-h-[30vh] md:max-h-full">
             <div class="p-3 border-b border-blue-900 border-opacity-50 text-sm font-bold text-blue-400 uppercase tracking-widest bg-black bg-opacity-30 flex justify-between items-center">
                 <span>Menu do Sistema</span>
-                <button onclick="syncAllFromSupabase(true)" title="Sincronizar com Nuvem" class="text-xs text-cyan-400 hover:text-white transition-all">🔄</button>
+                <span class="text-[10px] text-cyan-500/70 font-mono uppercase">Auto-Sync</span>
             </div>
             <nav id="category-tabs" class="flex flex-col py-2">
                 <!-- Abas geradas via JS -->
@@ -427,7 +427,7 @@
     </main>
 
     <footer class="text-center text-[10px] text-blue-900 opacity-60 mt-2">
-        System Integration Status: Supabase RLS + Web Audio Synth + Streak Engine | Life OS v7.5
+        System Integration Status: Supabase Realtime + Auto-Sync Engine | Life OS v7.6
     </footer>
 
     <!-- Lógica Modular do Sistema -->
