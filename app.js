@@ -11,10 +11,14 @@ const LEGACY_STORAGE_KEY = 'soloLevelingOS_Save_v4';
 const AWAKENING_SESSION_KEY = 'soloLevelingOS_Awakened_Session';
 const SOUND_MUTE_STORAGE_KEY = 'lifeOS_SoundMuted';
 
-// Quantidades obrigatórias para liberar as Lootboxes
-const DAILY_QUOTA = 4;
+// Quantidades obrigatórias para liberar as Lootboxes (3 Dailies / 3 Weeklies)
+const DAILY_QUOTA = 3;
 const WEEKLY_QUOTA = 3;
 const CATEGORY_MIN_QUOTA = 3;
+
+// Memória anti-repetição (guarda os últimos 5 dias de Dailies e 3 semanas de Weeklies)
+const MAX_DAILY_HISTORY_CODES = 15;
+const MAX_WEEKLY_HISTORY_CODES = 9;
 
 // Intervalo de sincronização automática silenciosa (12 segundos)
 const AUTO_SYNC_INTERVAL_MS = 12000;
@@ -233,50 +237,117 @@ function rollXpForDifficulty(diff) {
 
 /**
  * ==========================================
- * BANCO DE HÁBITOS DIÁRIOS E SEMANAIS
+ * BANCO DE HÁBITOS UNIVERSAIS (DIÁRIOS, SEMANAIS E PENALIDADES)
  * ==========================================
+ * Reformulado para atender qualquer perfil de pessoa com 45 opções diárias e 25 semanais.
  */
 const DAILY_HABITS_POOL = [
-    { code: 'dh1', text: 'Beber pelo menos 2 litros de água ao longo do dia', diff: 'Fácil' },
-    { code: 'dh2', text: 'Ler 10 páginas de um livro de desenvolvimento ou filosofia', diff: 'Médio' },
-    { code: 'dh3', text: 'Fazer 15 minutos de alongamento físico e mobilidade', diff: 'Fácil' },
-    { code: 'dh4', text: 'Realizar 30 minutos de caminhada ou exercício físico', diff: 'Médio' },
-    { code: 'dh5', text: 'Ficar 45 minutos antes de dormir sem celular ou redes sociais', diff: 'Difícil' },
-    { code: 'dh6', text: 'Organizar a mesa de estudo/trabalho antes de iniciar o dia', diff: 'Fácil' },
-    { code: 'dh7', text: 'Praticar 10 minutos de respiração consciente ou silêncio mental', diff: 'Fácil' },
-    { code: 'dh8', text: 'Fazer uma refeição principal 100% limpa (sem açúcar/ultraprocessados)', diff: 'Médio' },
-    { code: 'dh9', text: 'Definir as 3 prioridades do dia por escrito e concluir a primeira', diff: 'Médio' },
-    { code: 'dh10', text: 'Completar 1 bloco de 30min de foco total (Pomodoro) sem distrações', diff: 'Médio' },
-    { code: 'dh11', text: 'Executar 3 séries de flexões ou agachamentos livres', diff: 'Médio' },
-    { code: 'dh12', text: 'Expor-se à luz natural do sol por 10 minutos pela manhã', diff: 'Fácil' },
-    { code: 'dh13', text: 'Revisar os gastos das últimas 24h e manter controle financeiro', diff: 'Fácil' },
-    { code: 'dh14', text: 'Passar o dia inteiro sem reclamar de imprevistos (Prática Estoica)', diff: 'Difícil' },
-    { code: 'dh15', text: 'Arrumar a cama e o quarto imediatamente após acordar', diff: 'Fácil' },
-    { code: 'dh16', text: 'Substituir qualquer bebida açucarada por água ou chá hoje', diff: 'Fácil' },
-    { code: 'dh17', text: 'Estudar 25 minutos de um tema técnico ou profissional novo', diff: 'Médio' },
-    { code: 'dh18', text: 'Manter postura correta e levantar da cadeira a cada 1 hora', diff: 'Fácil' },
-    { code: 'dh19', text: 'Consumir pelo menos 2 porções de frutas ou vegetais hoje', diff: 'Fácil' },
-    { code: 'dh20', text: 'Escrever 1 aprendizado ou ideia importante antes de encerrar o dia', diff: 'Fácil' }
+    // Saúde & Hidratação
+    { code: 'dh1',  text: 'Beber pelo menos 2 litros de água ao longo do dia', diff: 'Fácil' },
+    { code: 'dh2',  text: 'Tomar 1 copo grande de água logo após acordar', diff: 'Fácil' },
+    { code: 'dh3',  text: 'Consumir pelo menos 2 porções de frutas ou verduras hoje', diff: 'Fácil' },
+    { code: 'dh4',  text: 'Evitar refrigerantes, doces ou bebidas açucaradas hoje', diff: 'Médio' },
+    { code: 'dh5',  text: 'Fazer uma refeição principal equilibrada e sem ultraprocessados', diff: 'Médio' },
+    { code: 'dh6',  text: 'Evitar comer alimentos pesados pelo menos 2 horas antes de dormir', diff: 'Médio' },
+    { code: 'dh7',  text: 'Expor-se à luz natural do sol por pelo menos 10 minutos', diff: 'Fácil' },
+    { code: 'dh8',  text: 'Fazer higiene bucal completa (incluindo fio dental) após as refeições', diff: 'Fácil' },
+
+    // Movimento & Corpo
+    { code: 'dh9',  text: 'Fazer 10 a 15 minutos de alongamento físico e mobilidade', diff: 'Fácil' },
+    { code: 'dh10', text: 'Realizar 30 minutos de caminhada ou atividade física', diff: 'Médio' },
+    { code: 'dh11', text: 'Fazer uma série rápida de ativação física (polichinelos, agachamentos ou flexões)', diff: 'Médio' },
+    { code: 'dh12', text: 'Cuidar da postura corporal e levantar para se esticar a cada hora sentado', diff: 'Fácil' },
+    { code: 'dh13', text: 'Optar por caminhar mais ou usar escadas sempre que possível hoje', diff: 'Fácil' },
+    { code: 'dh14', text: 'Dedicar 15 minutos para relaxar a musculatura do pescoço, ombros e costas', diff: 'Fácil' },
+
+    // Ordem & Ambiente
+    { code: 'dh15', text: 'Arrumar a cama logo após acordar', diff: 'Fácil' },
+    { code: 'dh16', text: 'Organizar o próprio espaço ou mesa antes de iniciar as atividades do dia', diff: 'Fácil' },
+    { code: 'dh17', text: 'Não deixar louça ou copos sujos acumulados ao final do dia', diff: 'Fácil' },
+    { code: 'dh18', text: 'Dedicar 10 minutos para guardar objetos fora do lugar no quarto ou na casa', diff: 'Fácil' },
+    { code: 'dh19', text: 'Separar a roupa e os itens que vai precisar para o dia seguinte', diff: 'Fácil' },
+    { code: 'dh20', text: 'Eliminar 3 itens inúteis (lixo, papéis antigos ou embalagens vazias) do ambiente', diff: 'Fácil' },
+
+    // Foco, Produtividade & Rotina
+    { code: 'dh21', text: 'Definir as 3 tarefas mais importantes do dia e concluir pelo menos a primeira', diff: 'Médio' },
+    { code: 'dh22', text: 'Realizar 30 minutos de foco total em uma tarefa importante sem olhar o celular', diff: 'Médio' },
+    { code: 'dh23', text: 'Resolver uma pequena pendência que você estava adiando há dias', diff: 'Médio' },
+    { code: 'dh24', text: 'Começar o dia sem abrir redes sociais nos primeiros 30 minutos após acordar', diff: 'Difícil' },
+    { code: 'dh25', text: 'Desligar telas ou ficar sem redes sociais 40 minutos antes de dormir', diff: 'Difícil' },
+    { code: 'dh26', text: 'Cumprir um horário planejado para ir para a cama hoje', diff: 'Médio' },
+    { code: 'dh27', text: 'Levantar da cama no primeiro toque do despertador (sem usar o botão soneca)', diff: 'Difícil' },
+    { code: 'dh28', text: 'Anotar os compromissos ou prioridades de amanhã antes de encerrar o dia', diff: 'Fácil' },
+    { code: 'dh29', text: 'Passar pelo menos 1 hora com as notificações de redes sociais silenciadas', diff: 'Médio' },
+
+    // Mente, Conhecimento & Desenvolvimento
+    { code: 'dh30', text: 'Ler pelo menos 5 a 10 páginas de qualquer livro ou leitura construtiva', diff: 'Médio' },
+    { code: 'dh31', text: 'Dedicar 20 minutos para aprender algo novo (curso, vídeo educativo, idioma ou leitura)', diff: 'Médio' },
+    { code: 'dh32', text: 'Praticar 5 a 10 minutos de respiração profunda ou silêncio mental', diff: 'Fácil' },
+    { code: 'dh33', text: 'Anotar 1 ideia, reflexão ou aprendizado positivo que teve hoje', diff: 'Fácil' },
+    { code: 'dh34', text: 'Passar o dia mantendo a calma e evitando reclamar de pequenos imprevistos', diff: 'Difícil' },
+    { code: 'dh35', text: 'Ouvir um conteúdo construtivo, educativo ou música relaxante durante o dia', diff: 'Fácil' },
+    { code: 'dh36', text: 'Fazer uma pausa consciente de 10 minutos longe de telas para descansar a vista', diff: 'Fácil' },
+
+    // Finanças & Consciência
+    { code: 'dh37', text: 'Conferir os gastos realizados nas últimas 24h para manter controle financeiro', diff: 'Fácil' },
+    { code: 'dh38', text: 'Passar o dia inteiro com zero compras por impulso ou gastos desnecessários', diff: 'Médio' },
+    { code: 'dh39', text: 'Preparar as próprias refeições ou lanches em casa hoje em vez de pedir delivery', diff: 'Médio' },
+
+    // Social, Bem-Estar & Autocuidado
+    { code: 'dh40', text: 'Enviar uma mensagem atenciosa ou conversar com um amigo ou familiar', diff: 'Fácil' },
+    { code: 'dh41', text: 'Fazer um elogio sincero ou gesto de gentileza para alguém hoje', diff: 'Fácil' },
+    { code: 'dh42', text: 'Dedicar 15 minutos exclusivos ao autocuidado (pele, cabelo, banho relaxante ou aparência)', diff: 'Fácil' },
+    { code: 'dh43', text: 'Fazer uma refeição com atenção plena, mastigando devagar e sem pressa', diff: 'Fácil' },
+    { code: 'dh44', text: 'Dedicar 20 minutos a um hobby pessoal criativo ou relaxante fora das redes sociais', diff: 'Fácil' },
+    { code: 'dh45', text: 'Concluir 100% de uma tarefa começada hoje sem deixá-la pela metade', diff: 'Médio' }
 ];
 
 const WEEKLY_HABITS_POOL = [
-    { code: 'wh1', text: 'Completar pelo menos 3 sessões de treino físico nesta semana', diff: 'Difícil' },
-    { code: 'wh2', text: 'Concluir a leitura de um capítulo completo e refletir sobre o tema', diff: 'Médio' },
-    { code: 'wh3', text: 'Revisar planilha financeira semanal e cortar gastos desnecessários', diff: 'Médio' },
-    { code: 'wh4', text: 'Realizar uma limpeza e organização completa no ambiente pessoal', diff: 'Médio' },
-    { code: 'wh5', text: 'Dedicar um momento de qualidade desconectado com família ou amigos', diff: 'Fácil' },
-    { code: 'wh6', text: 'Planejar o calendário e metas principais da próxima semana', diff: 'Fácil' },
-    { code: 'wh7', text: 'Passar 3 dias da semana com zero delivery ou fast-food', diff: 'Difícil' },
-    { code: 'wh8', text: 'Acumular 2 horas de estudo focado em evolução de carreira/PDI', diff: 'Difícil' },
-    { code: 'wh9', text: 'Dormir pelo menos 7h por noite em 5 dias desta semana', diff: 'Difícil' },
-    { code: 'wh10', text: 'Organizar arquivos digitais do PC e limpar pendências acumuladas', diff: 'Fácil' }
+    // Saúde & Movimento Semanal
+    { code: 'wh1',  text: 'Realizar pelo menos 3 sessões de exercício físico ou caminhada nesta semana', diff: 'Difícil' },
+    { code: 'wh2',  text: 'Dormir pelo menos 7 horas por noite em 5 dias desta semana', diff: 'Difícil' },
+    { code: 'wh3',  text: 'Passar pelo menos 4 dias da semana sem consumir delivery ou fast-food', diff: 'Difícil' },
+    { code: 'wh4',  text: 'Atingir a meta de beber 2 litros de água em pelo menos 5 dias da semana', diff: 'Médio' },
+    { code: 'wh5',  text: 'Fazer uma atividade ao ar livre (parque, caminhada longa ou esporte) na semana', diff: 'Médio' },
+    { code: 'wh6',  text: 'Ficar 3 dias da semana sem consumir doces ou bebidas açucaradas', diff: 'Difícil' },
+
+    // Casa & Organização Semanal
+    { code: 'wh7',  text: 'Realizar uma limpeza e organização geral no quarto ou ambiente principal', diff: 'Médio' },
+    { code: 'wh8',  text: 'Trocar a roupa de cama e as toalhas de banho da semana', diff: 'Fácil' },
+    { code: 'wh9',  text: 'Lavar, secar e guardar todas as roupas acumuladas', diff: 'Médio' },
+    { code: 'wh10', text: 'Organizar uma gaveta, armário ou prateleira que esteja bagunçada', diff: 'Fácil' },
+    { code: 'wh11', text: 'Limpar e higienizar os aparelhos de uso diário (celular, teclado, mesa ou fones)', diff: 'Fácil' },
+    { code: 'wh12', text: 'Verificar alimentos na geladeira/armário e planejar as refeições da semana', diff: 'Médio' },
+
+    // Planejamento & Finanças Semanais
+    { code: 'wh13', text: 'Revisar os gastos da semana e atualizar seu controle financeiro', diff: 'Médio' },
+    { code: 'wh14', text: 'Planejar a agenda, compromissos e 3 metas principais para a próxima semana', diff: 'Fácil' },
+    { code: 'wh15', text: 'Limpar arquivos desnecessários, fotos repetidas ou downloads no celular/PC', diff: 'Fácil' },
+    { code: 'wh16', text: 'Resolver a pendência mais chata da sua semana sem deixar para a próxima', diff: 'Difícil' },
+    { code: 'wh17', text: 'Verificar contas, boletos ou assinaturas do mês para evitar juros ou esquecimentos', diff: 'Fácil' },
+
+    // Evolução Pessoal, Mente & Relações
+    { code: 'wh18', text: 'Acumular pelo menos 2 horas de estudo ou aprendizado de uma habilidade na semana', diff: 'Difícil' },
+    { code: 'wh19', text: 'Finalizar a leitura de um capítulo inteiro de livro ou artigo aprofundado', diff: 'Médio' },
+    { code: 'wh20', text: 'Dedicar um momento de qualidade presencial e sem celular com família, parceiro(a) ou amigos', diff: 'Fácil' },
+    { code: 'wh21', text: 'Fazer um período de detox digital (pelo menos 3 horas seguidas longe das redes sociais)', diff: 'Médio' },
+    { code: 'wh22', text: 'Tirar 1 hora na semana exclusiva para lazer produtivo, descanso mental ou autocuidado', diff: 'Fácil' },
+    { code: 'wh23', text: 'Dar andamento prático em uma meta pessoal de médio/longo prazo nesta semana', diff: 'Médio' },
+    { code: 'wh24', text: 'Organizar sua caixa de entrada de e-mails ou mensagens pendentes importantes', diff: 'Fácil' },
+    { code: 'wh25', text: 'Fazer um balanço da semana: anotar 3 conquistas e 1 ponto a melhorar', diff: 'Fácil' }
 ];
 
 const PENALTY_QUESTS_POOL = [
-    '💀 [PENALIDADE] Zona de Sobrevivência: 50 Flexões + 50 Agachamentos + 1L de Água',
-    '💀 [PENALIDADE] Disciplina Forçada: 45 minutos de estudo/leitura focado com celular longe',
-    '💀 [PENALIDADE] Purificação Física: 35 minutos de caminhada rápida/corrida + zero açúcar hoje',
-    '💀 [PENALIDADE] Ordem Absoluta: Faxina completa no quarto/mesa + 30 Polichinelos'
+    '💀 [PENALIDADE] Zona de Sobrevivência: 40 Polichinelos + 30 Agachamentos + 1L de Água',
+    '💀 [PENALIDADE] Disciplina Forçada: 40 minutos de foco produtivo ou leitura com celular longe',
+    '💀 [PENALIDADE] Purificação Física: 30 minutos de caminhada/exercício + zero açúcar hoje',
+    '💀 [PENALIDADE] Ordem Absoluta: Faxina e organização completa no quarto/mesa + 20 Flexões',
+    '💀 [PENALIDADE] Detox do Sistema: Ficar 2 horas seguidas sem abrir redes sociais ou jogos',
+    '💀 [PENALIDADE] Resistência Física: 15 minutos de alongamento + 3 séries de prancha abdominal',
+    '💀 [PENALIDADE] Restauração de Ambiente: Lavar toda a louça + organizar uma gaveta/armário',
+    '💀 [PENALIDADE] Controle Mental: 15 minutos de silêncio absoluto/respiração + planejar o dia no papel',
+    '💀 [PENALIDADE] Hidratação de Emergência: Beber 2,5L de água hoje + 25 minutos de atividade física',
+    '💀 [PENALIDADE] Protocolo Anti-Procrastinação: Concluir imediatamente 1 tarefa adiada + 30 Polichinelos'
 ];
 
 /**
@@ -321,6 +392,7 @@ let resetTimestamps = {
     last_daily_codes: [],
     last_weekly_codes: [],
     locked_category: null,
+    locked_categories: [],
     last_streak_date: null,
     streak_count: 0
 };
@@ -365,6 +437,71 @@ const periodicQuests = {
     'monthly': { list: [], boxClaimed: false },
     'yearly': { list: [], boxClaimed: false }
 };
+
+/**
+ * ==========================================
+ * GERENCIADOR DE BLOQUEIO MULTI-CATEGORIAS & PENALIDADES
+ * ==========================================
+ * Garante 1 categoria trancada para cada missão de penalidade ativa.
+ */
+function getLockedCategoriesArray() {
+    let list = [];
+    if (Array.isArray(resetTimestamps.locked_categories)) {
+        list = [...resetTimestamps.locked_categories];
+    }
+    if (resetTimestamps.locked_category && !list.includes(resetTimestamps.locked_category)) {
+        list.push(resetTimestamps.locked_category);
+    }
+    return list.filter(k => categories[k] && !categories[k].isSystem);
+}
+
+function isCategoryLocked(catKey) {
+    return getLockedCategoriesArray().includes(catKey);
+}
+
+function hasActivePenaltyQuests() {
+    return periodicQuests.daily.list.some(t => t.isPenalty && !t.done);
+}
+
+function getActivePenaltyQuestsCount() {
+    return periodicQuests.daily.list.filter(t => t.isPenalty && !t.done).length;
+}
+
+function syncLockedCategoriesWithActivePenalties() {
+    const activePenalties = getActivePenaltyQuestsCount();
+    const mainCatKeys = Object.keys(categories).filter(k => !categories[k].isSystem);
+    const targetLocksCount = Math.min(activePenalties, mainCatKeys.length);
+
+    let currentLocks = getLockedCategoriesArray();
+    let changed = false;
+
+    if (targetLocksCount === 0) {
+        if (currentLocks.length > 0 || resetTimestamps.locked_category !== null) {
+            currentLocks = [];
+            changed = true;
+        }
+    } else if (currentLocks.length < targetLocksCount) {
+        const available = mainCatKeys.filter(k => !currentLocks.includes(k));
+        while (currentLocks.length < targetLocksCount && available.length > 0) {
+            const randIdx = Math.floor(Math.random() * available.length);
+            currentLocks.push(available.splice(randIdx, 1)[0]);
+            changed = true;
+        }
+    } else if (currentLocks.length > targetLocksCount) {
+        currentLocks = currentLocks.slice(0, targetLocksCount);
+        changed = true;
+    }
+
+    resetTimestamps.locked_categories = currentLocks;
+    resetTimestamps.locked_category = currentLocks[0] || null;
+    return changed;
+}
+
+function getLockedCategoriesTitlesText() {
+    const locks = getLockedCategoriesArray();
+    if (locks.length === 0) return 'Nenhuma';
+    return locks.map(k => categories[k]?.title || k).join(', ');
+}
 
 /**
  * ==========================================
@@ -632,6 +769,7 @@ async function generateRandomPeriodicQuests(periodType) {
     const pool = isDaily ? DAILY_HABITS_POOL : WEEKLY_HABITS_POOL;
     const count = isDaily ? DAILY_QUOTA : WEEKLY_QUOTA;
     const lastCodesKey = isDaily ? 'last_daily_codes' : 'last_weekly_codes';
+    const maxHistory = isDaily ? MAX_DAILY_HISTORY_CODES : MAX_WEEKLY_HISTORY_CODES;
     const lastCodes = Array.isArray(resetTimestamps[lastCodesKey]) ? resetTimestamps[lastCodesKey] : [];
 
     let available = pool.filter(item => !lastCodes.includes(item.code));
@@ -643,7 +781,8 @@ async function generateRandomPeriodicQuests(periodType) {
     }
 
     const selected = available.slice(0, count);
-    resetTimestamps[lastCodesKey] = selected.map(s => s.code);
+    const updatedHistory = [...lastCodes, ...selected.map(s => s.code)];
+    resetTimestamps[lastCodesKey] = updatedHistory.slice(-maxHistory);
 
     const oldIds = periodicQuests[periodType].list
         .filter(t => !t.isPenalty)
@@ -690,6 +829,7 @@ async function topUpPeriodicQuests(periodType) {
     const targetQuota = isDaily ? DAILY_QUOTA : WEEKLY_QUOTA;
     const pool = isDaily ? DAILY_HABITS_POOL : WEEKLY_HABITS_POOL;
     const lastCodesKey = isDaily ? 'last_daily_codes' : 'last_weekly_codes';
+    const maxHistory = isDaily ? MAX_DAILY_HISTORY_CODES : MAX_WEEKLY_HISTORY_CODES;
 
     const currentNonPenalty = periodicQuests[periodType].list.filter(t => !t.isPenalty);
     if (currentNonPenalty.length >= targetQuota) return false;
@@ -713,7 +853,8 @@ async function topUpPeriodicQuests(periodType) {
     const selected = available.slice(0, missingCount);
     if (selected.length === 0) return false;
 
-    resetTimestamps[lastCodesKey] = [...new Set([...lastCodes, ...selected.map(s => s.code)])];
+    const updatedHistory = [...new Set([...lastCodes, ...selected.map(s => s.code)])];
+    resetTimestamps[lastCodesKey] = updatedHistory.slice(-maxHistory);
 
     const newRows = selected.map(s => ({
         user_id: currentUser.id,
@@ -749,11 +890,11 @@ async function applyDailyPenalty() {
     player.streak = 0;
     resetTimestamps.streak_count = 0;
 
-    // 2. Dreno de XP ou Queda de Nível
-    const xpLoss = Math.max(40, Math.floor(player.xp * 0.35));
-    if (player.xp >= xpLoss) {
-        player.xp -= xpLoss;
-        penaltiesApplied.push(`• Dreno de Energia por Falha Diária: -${xpLoss} EXP`);
+    // 2. Dreno de 35% de XP ou Queda de Nível
+    const xpLoss = Math.floor(player.xp * 0.35);
+    if (player.xp > 0 && xpLoss > 0) {
+        player.xp = Math.max(0, player.xp - xpLoss);
+        penaltiesApplied.push(`• Dreno de Energia por Falha Diária: -${xpLoss} EXP (-35%)`);
     } else if (player.level > 1) {
         player.level--;
         player.xp = 0;
@@ -763,14 +904,15 @@ async function applyDailyPenalty() {
         penaltiesApplied.push(`• EXP reduzido a 0.`);
     }
 
-    // 3. Bloqueio de Categoria Principal Aleatória
-    const mainCatKeys = Object.keys(categories).filter(k => !categories[k].isSystem);
-    const randomCatKey = mainCatKeys[Math.floor(Math.random() * mainCatKeys.length)];
-    resetTimestamps.locked_category = randomCatKey;
-    penaltiesApplied.push(`• Categoria Bloqueada: [${categories[randomCatKey].title}] 🔒`);
+    // 3. Injeção da Missão de Sobrevivência (Penalidade) sem repetir as já ativas
+    const existingPenaltyTexts = periodicQuests.daily.list
+        .filter(t => t.isPenalty && !t.done)
+        .map(t => normalizeStr(t.text));
 
-    // 4. Injeção da Missão de Sobrevivência (Penalidade)
-    const penaltyText = PENALTY_QUESTS_POOL[Math.floor(Math.random() * PENALTY_QUESTS_POOL.length)];
+    let availablePenalties = PENALTY_QUESTS_POOL.filter(p => !existingPenaltyTexts.includes(normalizeStr(p)));
+    if (availablePenalties.length === 0) availablePenalties = [...PENALTY_QUESTS_POOL];
+
+    const penaltyText = availablePenalties[Math.floor(Math.random() * availablePenalties.length)];
     const { data: penRow } = await supabaseClient.from('quests').insert([{
         user_id: currentUser.id,
         username: player.username,
@@ -787,7 +929,14 @@ async function applyDailyPenalty() {
     if (penRow) {
         periodicQuests.daily.list.unshift(mapRowToTaskObj(penRow));
     }
-    penaltiesApplied.push(`• Missão: "${penaltyText}" adicionada às Daily Quests!`);
+
+    // 4. Sincroniza o bloqueio de categorias (1 categoria trancada por penalidade ativa)
+    syncLockedCategoriesWithActivePenalties();
+    const lockedNames = getLockedCategoriesTitlesText();
+
+    penaltiesApplied.push(`• Categorias Bloqueadas (${getLockedCategoriesArray().length}): [${lockedNames}] 🔒`);
+    penaltiesApplied.push(`• Daily Quests Bloqueadas: Cumpra a punição antes de liberar as Dailies do dia!`);
+    penaltiesApplied.push(`• Nova Penalidade: "${penaltyText}"`);
 
     hasShownPenaltyModalThisSession = true;
     openPenaltyModalUI(penaltiesApplied);
@@ -940,13 +1089,14 @@ async function syncAllFromSupabase(isSilent = false) {
 
         await checkPeriodicResets(new Date());
 
-        // Auto-limpeza: se já existem missões Daily criadas hoje e sobraram missões antigas ou duplicadas (> 4), limpa o excesso
+        // Auto-limpeza e ajuste para a cota de 3 Daily Quests (mantendo as já concluídas hoje prioritariamente)
         const todayStr = new Date().toDateString();
         const currentNonPenDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
         const todayDailies = currentNonPenDailies.filter(t => t.created_at && new Date(t.created_at).toDateString() === todayStr);
 
         if (todayDailies.length >= DAILY_QUOTA && currentNonPenDailies.length > DAILY_QUOTA) {
-            const keepIds = new Set(todayDailies.slice(0, DAILY_QUOTA).map(t => t.id));
+            const sortedToday = [...todayDailies].sort((a, b) => Number(b.done) - Number(a.done));
+            const keepIds = new Set(sortedToday.slice(0, DAILY_QUOTA).map(t => t.id));
             const extraIds = currentNonPenDailies.filter(t => !keepIds.has(t.id)).map(t => t.id);
             if (extraIds.length > 0) {
                 await supabaseClient.from('quests').delete().in('id', extraIds);
@@ -954,32 +1104,37 @@ async function syncAllFromSupabase(isSilent = false) {
             }
         }
 
-        let toppedUp = false;
-        if (await topUpPeriodicQuests('daily')) toppedUp = true;
-        if (await topUpPeriodicQuests('weekly')) toppedUp = true;
+        let needsSave = false;
+        if (await topUpPeriodicQuests('daily')) needsSave = true;
+        if (await topUpPeriodicQuests('weekly')) needsSave = true;
 
-        // Se o jogador já tinha batido todas as 4 Dailies hoje antes da atualização, garante 1 de Streak!
+        // Sincroniza a quantidade de categorias bloqueadas com o número de penalidades ativas (ex: 4 penalidades = 4 categorias bloqueadas)
+        if (syncLockedCategoriesWithActivePenalties()) {
+            needsSave = true;
+        }
+
+        // Se o jogador já cumpriu todas as Dailies e Penalidades hoje, garante o registro de Streak
         const nonPenDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
         if (nonPenDailies.length >= DAILY_QUOTA && periodicQuests.daily.list.every(t => t.done) && resetTimestamps.last_streak_date !== todayStr) {
             player.streak = Math.max(1, (player.streak || 0) + 1);
             resetTimestamps.last_streak_date = todayStr;
             resetTimestamps.streak_count = player.streak;
-            toppedUp = true;
+            needsSave = true;
         }
 
-        if (toppedUp) await savePlayerToSupabase();
+        if (needsSave) await savePlayerToSupabase();
 
         hasInitialSyncCompleted = true;
 
-        const hasActivePenalty = periodicQuests.daily.list.some(t => t.isPenalty && !t.done);
-        if (hasActivePenalty && !hasShownPenaltyModalThisSession) {
+        const activePenCount = getActivePenaltyQuestsCount();
+        if (activePenCount > 0 && !hasShownPenaltyModalThisSession) {
             hasShownPenaltyModalThisSession = true;
             openPenaltyModalUI([
-                `• Você possui uma [PENALTY QUEST: SURVIVAL] ativa!`,
-                `• Categoria Bloqueada: [${categories[resetTimestamps.locked_category]?.title || 'Nenhuma'}] 🔒`,
-                `• Conclua a missão de sobrevivência na aba Daily Quests antes das 00:00 para liberar seus acessos.`
+                `• Você possui ${activePenCount} missão(ões) de [PENALIDADE] ativa(s)!`,
+                `• Categorias Bloqueadas (${getLockedCategoriesArray().length}): [${getLockedCategoriesTitlesText()}] 🔒`,
+                `• Suas Daily Quests estão bloqueadas até que você cumpra todas as punições pendentes.`
             ]);
-        } else if (!hasActivePenalty) {
+        } else if (activePenCount === 0) {
             hasShownPenaltyModalThisSession = false;
         }
 
@@ -1105,12 +1260,14 @@ async function deletarMissao(taskId, listType, categoryId = null) {
         renderCategory(activeCategoryId);
     } else if (periodicQuests[listType]) {
         periodicQuests[listType].list = periodicQuests[listType].list.filter(t => t.id !== taskId);
+        syncLockedCategoriesWithActivePenalties();
         renderPeriodicQuests();
     }
     renderTabs();
 
     try {
         await supabaseClient.from('quests').delete().eq('id', taskId);
+        await savePlayerToSupabase();
         setSyncStatus('online');
         showSystemNotification('Missão removida.', 'success');
     } catch (err) {
@@ -1569,6 +1726,22 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
 
     if (!task || task.done || !isDone || !task.aprovada) return;
 
+    // Bloqueio das Daily Quests enquanto houver qualquer Penalidade ativa
+    if (listType === 'daily' && !task.isPenalty && hasActivePenaltyQuests()) {
+        SoundFX.error();
+        showSystemNotification('⚠️ Daily Quests bloqueadas! Conclua todas as missões de [PENALIDADE] primeiro!', 'error');
+        renderPeriodicQuests();
+        return;
+    }
+
+    // Bloqueio de categorias trancadas por penalidade
+    if (listType === 'category' && categoryId && isCategoryLocked(categoryId)) {
+        SoundFX.error();
+        showSystemNotification('⚠️ Esta categoria está bloqueada por penalidade!', 'error');
+        renderCategory(activeCategoryId);
+        return;
+    }
+
     if (task.dificuldade === 'Extremo' && task.subtarefas && task.subtarefas.length > 0) {
         if (!task.subtarefas.every(st => st.done)) {
             SoundFX.error();
@@ -1578,6 +1751,7 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
         }
     }
 
+    const previousLocks = getLockedCategoriesArray();
     task.done = true;
     SoundFX.questComplete();
 
@@ -1586,10 +1760,18 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
     }
 
     if (task.isPenalty) {
-        const unlockedCat = categories[resetTimestamps.locked_category]?.title || 'Categoria';
-        resetTimestamps.locked_category = null;
-        hasShownPenaltyModalThisSession = false;
-        showSystemNotification(`Penalidade cumprida! Acesso à categoria [${unlockedCat}] restaurado!`, 'success');
+        syncLockedCategoriesWithActivePenalties();
+        const currentLocks = getLockedCategoriesArray();
+        const unlockedKey = previousLocks.find(k => !currentLocks.includes(k));
+        const unlockedTitle = categories[unlockedKey]?.title || 'Categoria';
+        const remainingPenalties = getActivePenaltyQuestsCount();
+
+        if (remainingPenalties === 0) {
+            hasShownPenaltyModalThisSession = false;
+            showSystemNotification(`✅ Todas as penalidades cumpridas! [${unlockedTitle}] e as Daily Quests foram desbloqueadas!`, 'success');
+        } else {
+            showSystemNotification(`Penalidade cumprida! [${unlockedTitle}] desbloqueada! Restam ${remainingPenalties} penalidade(s).`, 'success');
+        }
     }
 
     player.xp += xp;
@@ -1616,6 +1798,13 @@ async function handleSubtaskToggle(taskId, subIdx, listType, categoryId = null) 
 
     if (!task || task.done || !task.aprovada || !task.subtarefas?.[subIdx]) return;
     if (task.subtarefas[subIdx].done) return;
+
+    if (listType === 'daily' && !task.isPenalty && hasActivePenaltyQuests()) {
+        SoundFX.error();
+        showSystemNotification('⚠️ Conclua as missões de [PENALIDADE] antes de progredir nas Daily Quests!', 'error');
+        renderPeriodicQuests();
+        return;
+    }
 
     task.subtarefas[subIdx].done = true;
     SoundFX.click();
@@ -1702,7 +1891,7 @@ function renderTabs() {
     for (const [key, data] of Object.entries(categories)) {
         const btn = document.createElement('button');
         const isActive = key === activeCategoryId;
-        const isLocked = resetTimestamps.locked_category === key;
+        const isLocked = isCategoryLocked(key);
         
         let taskCount = null;
         if (data.isOverview) {
@@ -1807,7 +1996,8 @@ function renderGeneralOverview() {
     } else {
         allActive.forEach(task => {
             const cat = categories[task._catKey];
-            const badgeLabel = `${cat.icon} ${cat.title}`;
+            const isCatLocked = isCategoryLocked(task._catKey);
+            const badgeLabel = `${isCatLocked ? '🔒' : cat.icon} ${cat.title}`;
             DOM.catList.appendChild(createTaskElement(task, 'category', task._catKey, true, badgeLabel));
         });
     }
@@ -1849,16 +2039,17 @@ function renderCategory(categoryId) {
         return;
     }
 
-    if (resetTimestamps.locked_category === categoryId) {
+    if (isCategoryLocked(categoryId)) {
+        const activePenCount = getActivePenaltyQuestsCount();
         DOM.catList.innerHTML = `
             <div class="p-8 border-2 border-red-600 bg-red-950 bg-opacity-30 rounded-lg text-center space-y-3 my-4">
                 <div class="text-5xl">🔒</div>
                 <h3 class="text-xl font-bold text-glow-red uppercase tracking-widest">Categoria Bloqueada por Penalidade</h3>
                 <p class="text-sm text-red-200 max-w-md mx-auto">
-                    O acesso às missões de <b>${cat.title}</b> foi suspenso porque você falhou nas Daily Quests anteriores.
+                    O acesso às missões de <b>${cat.title}</b> está suspenso. Você possui <b>${activePenCount}</b> missão(ões) de penalidade ativa(s) (${getLockedCategoriesArray().length} categoria(s) bloqueada(s)).
                 </p>
                 <p class="text-xs text-yellow-300 font-mono uppercase pt-2">
-                    ➔ Conclua a missão [💀 PENALIDADE] na aba Daily Quests ao lado para desbloquear!
+                    ➔ Cada missão [💀 PENALIDADE] concluída na aba Daily Quests desbloqueia 1 categoria!
                 </p>
             </div>
         `;
@@ -2359,6 +2550,14 @@ function renderPeriodicQuests() {
         if (group.list.length === 0) {
             domElement.innerHTML = `<li class="text-xs text-gray-600 italic py-1">Sem missões.</li>`;
         } else {
+            // Se for a lista Daily e houver penalidade ativa, exibe um banner de bloqueio acima das Dailies
+            if (type === 'daily' && hasActivePenaltyQuests()) {
+                const lockNotice = document.createElement('li');
+                lockNotice.className = 'p-2 rounded bg-red-950/60 border border-red-600/80 text-[11px] text-red-200 font-bold text-center uppercase tracking-wider mb-1';
+                lockNotice.innerHTML = `🔒 Cumpra a(s) Penalidade(s) abaixo para liberar as Daily Quests!`;
+                domElement.appendChild(lockNotice);
+            }
+
             group.list.forEach(task => {
                 domElement.appendChild(createTaskElement(task, type));
             });
@@ -2378,9 +2577,13 @@ function createTaskElement(task, listType, categoryId = null, isReadOnlyOverview
     const isExtremeWithSubs = task.dificuldade === 'Extremo' && Array.isArray(task.subtarefas) && task.subtarefas.length > 0;
     const diffCfg = DIFFICULTY_CONFIG[task.dificuldade || 'Fácil'] || DIFFICULTY_CONFIG['Fácil'];
 
+    // Verifica se esta Daily Quest está bloqueada por existir uma missão de Penalidade pendente
+    const isLockedByPenalty = listType === 'daily' && !task.isPenalty && !task.done && hasActivePenaltyQuests();
+
     let borderStyle = 'border-blue-900 border-opacity-30 hover:border-blue-500';
     if (task.done) borderStyle = 'completed border-gray-800 opacity-60';
-    else if (task.isPenalty) borderStyle = 'border-red-600 bg-red-950 bg-opacity-30';
+    else if (task.isPenalty) borderStyle = 'border-red-600 bg-red-950 bg-opacity-30 shadow-[0_0_10px_rgba(220,38,38,0.2)]';
+    else if (isLockedByPenalty) borderStyle = 'border-red-900/50 bg-black/50 opacity-55';
     else if (isPending) borderStyle = 'border-yellow-700 border-dashed opacity-75';
 
     li.className = `quest-item group flex flex-col gap-2 p-2.5 rounded bg-gray-900 bg-opacity-40 border ${borderStyle} transition-all`;
@@ -2393,10 +2596,20 @@ function createTaskElement(task, listType, categoryId = null, isReadOnlyOverview
     checkbox.className = 'quest-checkbox mt-0.5';
     checkbox.checked = Boolean(task.done);
     checkbox.disabled = Boolean(task.done) || isPending || isReadOnlyOverview || (isExtremeWithSubs && !task.subtarefas.every(s => s.done));
+
     if (isReadOnlyOverview && !task.done) {
         checkbox.title = "Modo Visualização: Clique em 'Ir ➔' para abrir a categoria e concluir a missão.";
+    } else if (isLockedByPenalty) {
+        checkbox.title = "Bloqueada! Conclua todas as missões de [PENALIDADE] primeiro.";
     }
+
     checkbox.addEventListener('change', (e) => {
+        if (isLockedByPenalty) {
+            e.target.checked = false;
+            SoundFX.error();
+            showSystemNotification('⚠️ Daily Quests bloqueadas! Conclua todas as missões de [PENALIDADE] primeiro!', 'error');
+            return;
+        }
         if (!e.target.checked) {
             e.target.checked = true;
             return;
@@ -2407,10 +2620,11 @@ function createTaskElement(task, listType, categoryId = null, isReadOnlyOverview
     const spanText = document.createElement('div');
     spanText.className = 'flex-grow leading-tight';
     spanText.innerHTML = `
-        <span class="task-text ${task.isPenalty ? 'text-red-300 font-bold' : 'text-blue-100'}">${task.text}</span>
+        <span class="task-text ${task.isPenalty ? 'text-red-300 font-bold' : isLockedByPenalty ? 'text-gray-400' : 'text-blue-100'}">${isLockedByPenalty ? '🔒 ' : ''}${task.text}</span>
         <div class="flex items-center gap-1.5 mt-1 flex-wrap">
             ${categoryBadgeLabel ? `<span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-blue-950 text-cyan-300 border border-blue-800">${categoryBadgeLabel}</span>` : ''}
             <span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${diffCfg.color}">${task.dificuldade || 'Fácil'}</span>
+            ${isLockedByPenalty ? '<span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-red-700 text-red-400 bg-red-950/80">🔒 Cumpra a Penalidade Primeiro</span>' : ''}
             ${isPending ? '<span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border border-yellow-600 text-yellow-400 bg-yellow-950">⏳ Aguardando Arquiteto</span>' : ''}
             ${task.done ? '<span class="text-[9px] uppercase font-bold text-gray-500">🔒 Concluída</span>' : ''}
         </div>
@@ -2450,13 +2664,13 @@ function createTaskElement(task, listType, categoryId = null, isReadOnlyOverview
         subList.className = 'pl-7 pt-1 space-y-1.5 border-t border-gray-800 mt-1';
         task.subtarefas.forEach((st, idx) => {
             const subRow = document.createElement('label');
-            subRow.className = `flex items-center gap-2 text-xs ${st.done ? 'line-through text-gray-500' : 'text-gray-300'} ${isPending || st.done || isReadOnlyOverview ? 'cursor-not-allowed' : 'cursor-pointer'}`;
+            subRow.className = `flex items-center gap-2 text-xs ${st.done ? 'line-through text-gray-500' : 'text-gray-300'} ${isPending || st.done || isReadOnlyOverview || isLockedByPenalty ? 'cursor-not-allowed' : 'cursor-pointer'}`;
             
             const subCheck = document.createElement('input');
             subCheck.type = 'checkbox';
             subCheck.className = 'w-3.5 h-3.5 accent-cyan-400';
             subCheck.checked = Boolean(st.done);
-            subCheck.disabled = Boolean(st.done) || Boolean(task.done) || isPending || isReadOnlyOverview;
+            subCheck.disabled = Boolean(st.done) || Boolean(task.done) || isPending || isReadOnlyOverview || isLockedByPenalty;
             subCheck.addEventListener('change', () => {
                 handleSubtaskToggle(task.id, idx, listType, categoryId);
             });
@@ -2478,12 +2692,19 @@ function createTaskElement(task, listType, categoryId = null, isReadOnlyOverview
  * ==========================================
  * SISTEMA DE TIMERS, GERADOR E PENALIDADE
  * ==========================================
+ * Semana agora inicia exatamente no Domingo às 00:00 (horário local),
+ * alinhada 100% com o cronômetro de Weekly Reset!
  */
 function getWeekNumber(d) {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    const localDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    // Se for Domingo (getDay() === 0), avança 1 dia para já abrir o número da nova semana no Domingo às 00:00!
+    if (localDate.getDay() === 0) {
+        localDate.setDate(localDate.getDate() + 1);
+    }
+    const utc = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate()));
+    utc.setUTCDate(utc.getUTCDate() + 4 - (utc.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+    return Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
 }
 
 let isProcessingReset = false;
@@ -2536,8 +2757,24 @@ async function checkPeriodicResets(now) {
         }
 
         if (resetTimestamps.weekly !== currentWeek) {
-            resetTimestamps.weekly = currentWeek;
-            await generateRandomPeriodicQuests('weekly');
+            const nonPenaltyWeeklies = periodicQuests.weekly.list.filter(t => !t.isPenalty);
+            const todayWeeklies = nonPenaltyWeeklies.filter(t =>
+                t.created_at && getWeekNumber(new Date(t.created_at)) === currentWeek
+            );
+
+            if (todayWeeklies.length >= WEEKLY_QUOTA) {
+                resetTimestamps.weekly = currentWeek;
+                const oldWeekIds = nonPenaltyWeeklies
+                    .filter(t => t.created_at && getWeekNumber(new Date(t.created_at)) !== currentWeek)
+                    .map(t => t.id);
+                if (oldWeekIds.length > 0) {
+                    await supabaseClient.from('quests').delete().in('id', oldWeekIds);
+                    periodicQuests.weekly.list = periodicQuests.weekly.list.filter(t => !oldWeekIds.includes(t.id));
+                }
+            } else {
+                resetTimestamps.weekly = currentWeek;
+                await generateRandomPeriodicQuests('weekly');
+            }
             changed = true;
         }
 
@@ -2554,6 +2791,7 @@ async function checkPeriodicResets(now) {
         }
 
         if (changed) {
+            syncLockedCategoriesWithActivePenalties();
             await savePlayerToSupabase();
             updatePlayerUI();
             renderTabs();
@@ -2592,8 +2830,14 @@ function startTimers() {
 
 function updateTimers() {
     const now = new Date();
-    // Se virar meia-noite com a tela aberta, sincroniza primeiro com o Supabase antes de rodar qualquer reset!
-    if (currentUser && hasInitialSyncCompleted && !isSyncingSupabase && !isProcessingReset && resetTimestamps.daily !== now.toDateString()) {
+    // Se virar meia-noite ou virar a semana no Domingo com a tela aberta, sincroniza primeiro com o Supabase antes de rodar qualquer reset!
+    if (
+        currentUser &&
+        hasInitialSyncCompleted &&
+        !isSyncingSupabase &&
+        !isProcessingReset &&
+        (resetTimestamps.daily !== now.toDateString() || resetTimestamps.weekly !== getWeekNumber(now))
+    ) {
         syncAllFromSupabase(true);
     }
 
@@ -2609,7 +2853,7 @@ function updateTimers() {
     document.getElementById('timer-weekly').innerText = formatTimeDiffDays(nextSunday - now);
 
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0);
-    document.getElementById('timer-monthly').innerText = formatTimeDiffDays(nextMonth - now);
+    document.getElementById('timer-monthly').innerText = formatTimeDiffDays(nextSunday ? (nextMonth - now) : 0);
 
     const nextYear = new Date(now.getFullYear() + 1, 0, 1, 0, 0, 0);
     document.getElementById('timer-yearly').innerText = formatTimeDiffDays(nextYear - now);
