@@ -27,7 +27,6 @@ const AUTO_SYNC_INTERVAL_MS = 12000;
  * ==========================================
  * SINTETIZADOR DE ÁUDIO NATIVO 2.0 (WEB AUDIO API)
  * ==========================================
- * Gera todos os efeitos sonoros do Sistema em tempo real sem arquivos externos.
  */
 const SoundFX = {
     ctx: null,
@@ -71,49 +70,41 @@ const SoundFX = {
         } catch (e) {}
     },
 
-    // Clique sutil de interface e troca de abas
     click() {
         this.playTone(900, 'sine', 0.035, 0.05, 0, 600);
     },
 
-    // Ping futurista de janela de notificação do Sistema
     notifyPing() {
-        this.playTone(1046.50, 'sine', 0.07, 0.07, 0);       // C6
-        this.playTone(1567.98, 'triangle', 0.16, 0.08, 0.06); // G6
+        this.playTone(1046.50, 'sine', 0.07, 0.07, 0);
+        this.playTone(1567.98, 'triangle', 0.16, 0.08, 0.06);
     },
 
-    // Som de inicialização na tela NOTIFICATION ("Yes")
     boot() {
         this.playTone(220, 'sawtooth', 0.18, 0.08, 0, 880);
         this.playTone(880, 'sine', 0.35, 0.12, 0.15, 1760);
     },
 
-    // Som cristalino ao concluir uma missão ou subtarefa
     questComplete() {
-        this.playTone(587.33, 'triangle', 0.12, 0.12, 0);     // D5
-        this.playTone(880.00, 'triangle', 0.25, 0.14, 0.09);  // A5
-        this.playTone(1174.66, 'sine', 0.35, 0.10, 0.18);     // D6
+        this.playTone(587.33, 'triangle', 0.12, 0.12, 0);
+        this.playTone(880.00, 'triangle', 0.25, 0.14, 0.09);
+        this.playTone(1174.66, 'sine', 0.35, 0.10, 0.18);
     },
 
-    // Som de ignição da Ofensiva Diária (Streak Up)
     streakUp() {
         [392.00, 523.25, 659.25, 783.99, 1046.50].forEach((f, idx) => {
             this.playTone(f, 'sawtooth', 0.18, 0.08, idx * 0.05, f * 1.15);
         });
     },
 
-    // Som metálico de encaixe ao equipar um novo item
     equip() {
         this.playTone(320, 'square', 0.06, 0.09, 0, 180);
         this.playTone(640, 'triangle', 0.12, 0.11, 0.06, 960);
     },
 
-    // "Tec-tec" mecânico da Roleta CS:GO a cada card que cruza o laser
     rouletteTick() {
         this.playTone(1350, 'triangle', 0.022, 0.09, 0, 420);
     },
 
-    // Revelação do Equipamento da Lootbox
     lootReveal(isGod = false) {
         if (isGod) {
             [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => {
@@ -127,7 +118,6 @@ const SoundFX = {
         }
     },
 
-    // Fanfarra de Level Up
     levelUp() {
         const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.51];
         notes.forEach((f, idx) => {
@@ -135,7 +125,6 @@ const SoundFX = {
         });
     },
 
-    // Ressonância Dimensional de Evolução de Classe
     classEvolution() {
         const notes = [220, 277.18, 329.63, 440, 659.25, 880, 1318.51];
         notes.forEach((f, idx) => {
@@ -144,13 +133,11 @@ const SoundFX = {
         });
     },
 
-    // Alarme da Zona de Penalidade
     penaltyAlarm() {
         this.playTone(190, 'sawtooth', 0.3, 0.14, 0, 130);
         this.playTone(190, 'sawtooth', 0.35, 0.14, 0.35, 120);
     },
 
-    // Alerta rápido de erro/bloqueio
     error() {
         this.playTone(240, 'sawtooth', 0.12, 0.1, 0, 160);
     }
@@ -179,10 +166,8 @@ function updateSoundButtonUI() {
 
 /**
  * ==========================================
- * GERADOR DE ARTE VETORIAL RPG / SOLO LEVELING (SPRINT 2)
+ * GERADOR DE FALLBACK VETORIAL (CASO ALGUMA IMAGEM AINDA NÃO EXISTA)
  * ==========================================
- * Cria ícones SVG Cyberpunk/RPG em alta definição para cada slot, raridade e Rank
- * sem depender de imagens externas que possam quebrar.
  */
 function svgToDataUri(svgString) {
     return `data:image/svg+xml;utf8,${encodeURIComponent(svgString.trim())}`;
@@ -201,61 +186,32 @@ function buildEquipmentSvgUri(slot, hexColor = '#00d4ff', isGod = false) {
         </linearGradient>
     </defs>`;
 
-    const bgFrame = isGod
-        ? `<polygon points="32,3 59,18 59,46 32,61 5,46 5,18" fill="rgba(5,10,20,0.85)" stroke="${hexColor}" stroke-width="2" stroke-dasharray="4 2"/>
-           <circle cx="32" cy="32" r="24" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.6"/>`
-        : `<polygon points="32,4 57,18 57,46 32,60 7,46 7,18" fill="rgba(5,10,20,0.75)" stroke="${hexColor}" stroke-width="1.5" opacity="0.65"/>`;
-
     let shape = '';
     switch (slot) {
         case 'capacete':
-            shape = `
-                <path d="M18 36 L18 24 C18 14 46 14 46 24 L46 36 L40 48 L32 44 L24 48 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
-                <polygon points="22,28 30,32 22,35" fill="#ffffff" filter="url(#glow)"/>
-                <polygon points="42,28 34,32 42,35" fill="#ffffff" filter="url(#glow)"/>
-                <path d="M32 12 L32 26 M26 42 L38 42" stroke="#ffffff" stroke-width="1.5" opacity="0.8"/>
-            `;
+            shape = `<path d="M18 36 L18 24 C18 14 46 14 46 24 L46 36 L40 48 L32 44 L24 48 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
+                     <polygon points="22,28 30,32 22,35" fill="#ffffff"/><polygon points="42,28 34,32 42,35" fill="#ffffff"/>`;
             break;
         case 'peitoral':
-            shape = `
-                <path d="M16 18 L24 14 L32 20 L40 14 L48 18 L52 28 L44 32 L42 50 L32 54 L22 50 L20 32 L12 28 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
-                <polygon points="32,24 38,32 32,44 26,32" fill="#ffffff" opacity="0.85" filter="url(#glow)"/>
-                <path d="M22 26 L42 26 M24 46 L40 46" stroke="${hexColor}" stroke-width="1.5"/>
-            `;
+            shape = `<path d="M16 18 L24 14 L32 20 L40 14 L48 18 L52 28 L44 32 L42 50 L32 54 L22 50 L20 32 L12 28 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
+                     <polygon points="32,24 38,32 32,44 26,32" fill="#ffffff" opacity="0.85"/>`;
             break;
         case 'botas':
-            shape = `
-                <path d="M22 14 L36 14 L36 36 L48 44 L48 50 L18 50 L18 40 L22 34 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
-                <path d="M36 20 L44 16 L40 28" fill="none" stroke="#ffffff" stroke-width="2" filter="url(#glow)"/>
-                <line x1="18" y1="46" x2="48" y2="46" stroke="#ffffff" stroke-width="1.5"/>
-            `;
+            shape = `<path d="M22 14 L36 14 L36 36 L48 44 L48 50 L18 50 L18 40 L22 34 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>`;
             break;
         case 'capa':
-            shape = `
-                <path d="M20 14 C28 18 36 18 44 14 L50 48 L39 44 L32 52 L25 44 L14 48 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
-                <path d="M24 16 L32 24 L40 16" fill="none" stroke="#ffffff" stroke-width="2"/>
-                <circle cx="32" cy="22" r="3" fill="#ffffff" filter="url(#glow)"/>
-            `;
+            shape = `<path d="M20 14 C28 18 36 18 44 14 L50 48 L39 44 L32 52 L25 44 L14 48 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>`;
             break;
         case 'arma_principal':
-            shape = `
-                <path d="M48 12 L52 16 L26 42 L20 42 L20 36 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
-                <line x1="49" y1="15" x2="23" y2="41" stroke="#ffffff" stroke-width="1.5"/>
-                <path d="M16 32 L32 48 M18 44 L12 50" stroke="${hexColor}" stroke-width="3" stroke-linecap="round" filter="url(#glow)"/>
-                <circle cx="22" cy="42" r="3" fill="#ffffff"/>
-            `;
+            shape = `<path d="M48 12 L52 16 L26 42 L20 42 L20 36 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
+                     <path d="M16 32 L32 48 M18 44 L12 50" stroke="${hexColor}" stroke-width="3" stroke-linecap="round"/>`;
             break;
-        case 'arma_secundaria':
         default:
-            shape = `
-                <path d="M32 12 L48 18 L46 36 C44 45 32 52 32 52 C32 52 20 45 18 36 L16 18 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>
-                <polygon points="32,19 40,24 38,35 32,44 26,35 24,24" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.85"/>
-                <circle cx="32" cy="30" r="4" fill="#ffffff" filter="url(#glow)"/>
-            `;
+            shape = `<path d="M32 12 L48 18 L46 36 C44 45 32 52 32 52 C32 52 20 45 18 36 L16 18 Z" fill="url(#grad)" stroke="${hexColor}" stroke-width="2" filter="url(#glow)"/>`;
             break;
     }
 
-    return svgToDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${glowFilter}${bgFrame}${shape}</svg>`);
+    return svgToDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${glowFilter}${shape}</svg>`);
 }
 
 function buildHunterAvatarSvgUri(rankName = 'E', primaryHex = '#00d4ff', secondaryHex = '#0077ff', hasCrown = false) {
@@ -266,9 +222,7 @@ function buildHunterAvatarSvgUri(rankName = 'E', primaryHex = '#00d4ff', seconda
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
             <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#121a2d"/>
-                <stop offset="60%" stop-color="#070b14"/>
-                <stop offset="100%" stop-color="#020307"/>
+                <stop offset="0%" stop-color="#121a2d"/><stop offset="60%" stop-color="#070b14"/><stop offset="100%" stop-color="#020307"/>
             </linearGradient>
             <linearGradient id="energyGrad" x1="0%" y1="100%" x2="0%" y2="0%">
                 <stop offset="0%" stop-color="${secondaryHex}" stop-opacity="0.1"/>
@@ -276,18 +230,11 @@ function buildHunterAvatarSvgUri(rankName = 'E', primaryHex = '#00d4ff', seconda
                 <stop offset="100%" stop-color="#ffffff" stop-opacity="0.95"/>
             </linearGradient>
         </defs>
-        <!-- Anel de Poder no Solo -->
         <ellipse cx="60" cy="182" rx="44" ry="9" fill="none" stroke="${primaryHex}" stroke-width="2" stroke-dasharray="8 4" filter="url(#aura)"/>
-        <ellipse cx="60" cy="182" rx="30" ry="5" fill="${primaryHex}" opacity="0.25" filter="url(#aura)"/>
-        <!-- Chamas de Aura Dimensional -->
         <path d="M22 178 Q12 120 30 75 Q18 40 42 20 Q60 4 78 20 Q102 40 90 75 Q108 120 98 178 Z" fill="none" stroke="${primaryHex}" stroke-width="1.5" opacity="0.45" filter="url(#aura)"/>
-        <!-- Manto / Silhueta do Caçador -->
         <path d="M36 56 L60 46 L84 56 L96 112 L86 176 L68 176 L64 130 L56 130 L52 176 L34 176 L24 112 Z" fill="url(#bodyGrad)" stroke="${primaryHex}" stroke-width="2" filter="url(#aura)"/>
-        <!-- Peitoral / Core Runes -->
         <polygon points="60,64 70,78 60,104 50,78" fill="url(#energyGrad)" opacity="0.85" filter="url(#aura)"/>
-        <!-- Cabeça / Capuz Sombras -->
         <path d="M44 48 C44 26 76 26 76 48 L70 58 L50 58 Z" fill="#060911" stroke="${primaryHex}" stroke-width="2"/>
-        <!-- Olhos Brilhantes Estilo Solo Leveling -->
         <polygon points="49,43 57,46 50,48" fill="#ffffff" stroke="${primaryHex}" stroke-width="1" filter="url(#aura)"/>
         <polygon points="71,43 63,46 70,48" fill="#ffffff" stroke="${primaryHex}" stroke-width="1" filter="url(#aura)"/>
         ${hasCrown ? `<polygon points="44,30 52,14 60,26 68,14 76,30" fill="url(#energyGrad)" stroke="#ffffff" stroke-width="1.2" filter="url(#aura)"/>` : ''}
@@ -295,28 +242,18 @@ function buildHunterAvatarSvgUri(rankName = 'E', primaryHex = '#00d4ff', seconda
     return svgToDataUri(svg);
 }
 
-function buildPenaltyDungeonBgUri() {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-        <defs>
-            <radialGradient id="portal" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#0f3d3e" stop-opacity="0.5"/>
-                <stop offset="60%" stop-color="#061418" stop-opacity="0.85"/>
-                <stop offset="100%" stop-color="#020508" stop-opacity="1"/>
-            </radialGradient>
-        </defs>
-        <rect width="400" height="400" fill="url(#portal)"/>
-        <circle cx="200" cy="200" r="150" fill="none" stroke="#14b8a6" stroke-width="1" stroke-dasharray="6 6" opacity="0.25"/>
-        <circle cx="200" cy="200" r="110" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="12 8" opacity="0.2"/>
-    </svg>`;
-    return svgToDataUri(svg);
-}
-
 /**
  * ==========================================
- * MOTOR DE IMAGENS PERSONALIZADAS (ASSET REGISTRY)
+ * MOTOR DE IMAGENS PERSONALIZADAS (CONFIG_IMAGENS)
  * ==========================================
- * Pré-carregado com as artes vetoriais da Sprint 2 (mas aceita qualquer URL externa caso queira substituir).
+ * Configurado automaticamente com o padrão:
+ * - img/fundo_penalidade.png
+ * - img/padrao_<slot>.png
+ * - img/<raridade>_<slot>.png
  */
+const IMG_FOLDER = 'img/';
+const IMG_EXT = '.png';
+
 const CONFIG_IMAGENS = {
     personagem: {
         padrao: buildHunterAvatarSvgUri('E', '#00d4ff', '#0077ff', false),
@@ -332,63 +269,245 @@ const CONFIG_IMAGENS = {
             Monarca:  buildHunterAvatarSvgUri('Monarca', '#ffffff', '#b388ff', true)
         }
     },
-    fundoPenalidade: buildPenaltyDungeonBgUri(),
+    fundoPenalidade: `${IMG_FOLDER}fundo_penalidade${IMG_EXT}`,
     equipamentosPadrao: {
-        capacete:        buildEquipmentSvgUri('capacete', '#4a5568', false),
-        peitoral:        buildEquipmentSvgUri('peitoral', '#4a5568', false),
-        botas:           buildEquipmentSvgUri('botas', '#4a5568', false),
-        capa:            buildEquipmentSvgUri('capa', '#4a5568', false),
-        arma_principal:  buildEquipmentSvgUri('arma_principal', '#4a5568', false),
-        arma_secundaria: buildEquipmentSvgUri('arma_secundaria', '#4a5568', false)
+        capacete:        `${IMG_FOLDER}padrao_capacete${IMG_EXT}`,
+        peitoral:        `${IMG_FOLDER}padrao_peitoral${IMG_EXT}`,
+        botas:           `${IMG_FOLDER}padrao_botas${IMG_EXT}`,
+        capa:            `${IMG_FOLDER}padrao_capa${IMG_EXT}`,
+        arma_principal:  `${IMG_FOLDER}padrao_arma_principal${IMG_EXT}`,
+        arma_secundaria: `${IMG_FOLDER}padrao_arma_secundaria${IMG_EXT}`
     },
     equipamentosPorRaridade: {
-        comum:     {},
-        incomum:   {},
-        raro:      {},
-        epico:     {},
-        lendario:  {},
-        mitico:    {},
-        exotico:   {},
-        divino:    {},
-        hack:      {},
-        break:     {}
+        comum: {
+            capacete: `${IMG_FOLDER}comum_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}comum_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}comum_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}comum_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}comum_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}comum_arma_secundaria${IMG_EXT}`
+        },
+        incomum: {
+            capacete: `${IMG_FOLDER}incomum_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}incomum_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}incomum_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}incomum_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}incomum_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}incomum_arma_secundaria${IMG_EXT}`
+        },
+        raro: {
+            capacete: `${IMG_FOLDER}raro_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}raro_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}raro_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}raro_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}raro_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}raro_arma_secundaria${IMG_EXT}`
+        },
+        epico: {
+            capacete: `${IMG_FOLDER}epico_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}epico_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}epico_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}epico_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}epico_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}epico_arma_secundaria${IMG_EXT}`
+        },
+        lendario: {
+            capacete: `${IMG_FOLDER}lendario_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}lendario_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}lendario_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}lendario_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}lendario_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}lendario_arma_secundaria${IMG_EXT}`
+        },
+        mitico: {
+            capacete: `${IMG_FOLDER}mitico_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}mitico_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}mitico_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}mitico_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}mitico_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}mitico_arma_secundaria${IMG_EXT}`
+        },
+        exotico: {
+            capacete: `${IMG_FOLDER}exotico_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}exotico_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}exotico_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}exotico_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}exotico_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}exotico_arma_secundaria${IMG_EXT}`
+        },
+        divino: {
+            capacete: `${IMG_FOLDER}divino_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}divino_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}divino_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}divino_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}divino_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}divino_arma_secundaria${IMG_EXT}`
+        },
+        hack: {
+            capacete: `${IMG_FOLDER}hack_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}hack_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}hack_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}hack_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}hack_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}hack_arma_secundaria${IMG_EXT}`
+        },
+        break: {
+            capacete: `${IMG_FOLDER}break_capacete${IMG_EXT}`,
+            peitoral: `${IMG_FOLDER}break_peitoral${IMG_EXT}`,
+            botas: `${IMG_FOLDER}break_botas${IMG_EXT}`,
+            capa: `${IMG_FOLDER}break_capa${IMG_EXT}`,
+            arma_principal: `${IMG_FOLDER}break_arma_principal${IMG_EXT}`,
+            arma_secundaria: `${IMG_FOLDER}break_arma_secundaria${IMG_EXT}`
+        }
     }
 };
 
+/**
+ * Fallback inteligente: se a imagem não for encontrada em img/nome.png,
+ * tenta na raiz ./nome.png, depois .webp, .jpg e por último usa o SVG embutido.
+ */
+function handleCustomImageError(imgEl, slot, hexColor = '#00d4ff', isGod = false) {
+    if (!imgEl) return;
+    const step = parseInt(imgEl.dataset.fallbackStep || '0', 10);
+    const currentSrc = imgEl.getAttribute('src') || '';
+
+    if (step === 0 && currentSrc.startsWith('img/')) {
+        // Tenta na pasta raiz caso o usuário tenha colocado fora de img/
+        imgEl.dataset.fallbackStep = '1';
+        imgEl.src = currentSrc.replace(/^img\//, '');
+        return;
+    }
+    if (step === 1 && currentSrc.endsWith('.png')) {
+        // Tenta extensão .webp em img/
+        imgEl.dataset.fallbackStep = '2';
+        imgEl.src = 'img/' + currentSrc.replace(/\.png$/, '.webp');
+        return;
+    }
+    if (step === 2 && currentSrc.endsWith('.webp')) {
+        // Tenta extensão .jpg em img/
+        imgEl.dataset.fallbackStep = '3';
+        imgEl.src = currentSrc.replace(/\.webp$/, '.jpg');
+        return;
+    }
+
+    // Fallback final: Arte Vetorial SVG embutida (nunca deixa ícone quebrado)
+    imgEl.onerror = null;
+    imgEl.src = buildEquipmentSvgUri(slot || 'arma_principal', hexColor, isGod);
+}
+window.handleCustomImageError = handleCustomImageError;
+
 function resolveEquipmentImageUrl(item) {
     if (!item) return "";
-    if (item.imageUrl) return item.imageUrl;
     const rarityId = item.rarity?.id;
     const slot = item.slot;
+    // Prioriza sempre o arquivo configurado em CONFIG_IMAGENS para carregar suas artes novas
     if (rarityId && slot && CONFIG_IMAGENS.equipamentosPorRaridade?.[rarityId]?.[slot]) {
         return CONFIG_IMAGENS.equipamentosPorRaridade[rarityId][slot];
     }
-    if (slot) {
-        return buildEquipmentSvgUri(slot, item.rarity?.hex || '#00d4ff', Boolean(item.rarity?.isGod));
+    if (item.imageUrl && !String(item.imageUrl).startsWith('data:image/svg+xml')) {
+        return item.imageUrl;
     }
-    return "";
+    if (slot && CONFIG_IMAGENS.equipamentosPadrao?.[slot]) {
+        return CONFIG_IMAGENS.equipamentosPadrao[slot];
+    }
+    return buildEquipmentSvgUri(slot || 'arma_principal', item.rarity?.hex || '#00d4ff', Boolean(item.rarity?.isGod));
+}
+
+/**
+ * ==========================================
+ * SISTEMA VISUAL DE TIERS (ROMANOS + ESTRELAS + TEXTURA ALBION)
+ * ==========================================
+ */
+const ROMAN_TIERS = {
+    1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V',
+    6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X', 11: 'XI'
+};
+
+function getTierRomanLabel(item) {
+    if (!item) return '';
+    if (item.rarity?.isGod) return 'GOD';
+    const t = item.tier || 11;
+    return ROMAN_TIERS[t] || `T${t}`;
+}
+
+function getTierRefinementHTML(item, sizeContext = 'slot') {
+    if (!item) return '';
+    const isGod = Boolean(item.rarity?.isGod);
+    const t = item.tier || 11;
+    const hex = item.rarity?.hex || '#00d4ff';
+    const fontSizeClass = sizeContext === 'modal' ? 'text-sm tracking-widest my-1' : 'text-[8px]';
+
+    if (isGod) {
+        return `<div class="item-refinement-bar ${fontSizeClass} text-white" style="text-shadow: 0 0 8px ${hex}, 0 0 14px #fff;">✦✦✦✦✦</div>`;
+    }
+    if (t === 1) {
+        return `<div class="item-refinement-bar ${fontSizeClass} text-yellow-300" style="text-shadow: 0 0 6px #facc15;">★★★★★</div>`;
+    }
+    if (t === 2) {
+        return `<div class="item-refinement-bar ${fontSizeClass}" style="color: ${hex}; text-shadow: 0 0 5px ${hex};">◆◆◆◆</div>`;
+    }
+    if (t <= 5) {
+        return `<div class="item-refinement-bar ${fontSizeClass}" style="color: ${hex};">◆◆◆</div>`;
+    }
+    if (t <= 8) {
+        return `<div class="item-refinement-bar ${fontSizeClass} text-gray-300">◆◆</div>`;
+    }
+    return `<div class="item-refinement-bar ${fontSizeClass} text-gray-500">◆</div>`;
+}
+
+function getSlotSurfaceInlineStyle(item) {
+    if (!item) return '';
+    const hex = item.rarity?.hex || '#00d4ff';
+    const isGod = Boolean(item.rarity?.isGod);
+    const t = item.tier || 11;
+
+    // Quanto mais próximo do Tier 1 (ou God Tier), mais intensa é a aura e a iluminação de fundo
+    const glowAlpha = isGod ? '66' : t === 1 ? '55' : t <= 3 ? '40' : t <= 7 ? '28' : '1a';
+    const outerShadow = isGod
+        ? `0 0 18px ${hex}88, inset 0 0 22px ${hex}66`
+        : t === 1
+            ? `0 0 14px #facc1566, inset 0 0 18px ${hex}55`
+            : `0 0 8px ${hex}33, inset 0 0 14px ${hex}${glowAlpha}`;
+
+    return `background: radial-gradient(circle at 50% 42%, ${hex}${glowAlpha} 0%, rgba(8, 12, 22, 0.94) 78%); box-shadow: ${outerShadow};`;
 }
 
 function renderEquipmentVisualHTML(item, sizeContext = 'slot') {
     const imgUrl = resolveEquipmentImageUrl(item);
     const hex = item?.rarity?.hex || '#00d4ff';
-    const icon = slotIcons[item?.slot] || '🛡️';
+    const isGod = Boolean(item?.rarity?.isGod);
+    const slot = item?.slot || 'arma_principal';
+    const t = item?.tier || 11;
 
-    if (imgUrl) {
-        const sizeClasses = sizeContext === 'modal'
-            ? 'w-24 h-24 md:w-28 md:h-28'
-            : sizeContext === 'roulette'
-                ? 'w-12 h-12'
-                : 'w-12 h-12 md:w-14 md:h-14';
-        return `<img src="${imgUrl}" alt="${item.name || item.slot}" class="${sizeClasses} object-contain mb-1" style="filter: drop-shadow(0 0 8px ${hex})">`;
-    }
+    const romanBadge = getTierRomanLabel(item);
+    const badgeClass = isGod ? 'badge-god' : t === 1 ? 'badge-t1' : 'text-gray-200';
+    const showCornerBadge = sizeContext !== 'modal';
 
-    const textClasses = sizeContext === 'modal'
-        ? 'text-7xl'
+    // Intensidade da aura (drop-shadow) estilo Albion Online
+    const auraStrength = isGod
+        ? `drop-shadow(0 0 10px ${hex}) drop-shadow(0 0 18px #ffffffaa)`
+        : t === 1
+            ? `drop-shadow(0 0 9px ${hex}) drop-shadow(0 0 14px #facc15aa)`
+            : t <= 4
+                ? `drop-shadow(0 0 8px ${hex})`
+                : `drop-shadow(0 0 5px ${hex}aa)`;
+
+    const sizeClasses = sizeContext === 'modal'
+        ? 'w-24 h-24 md:w-28 md:h-28'
         : sizeContext === 'roulette'
-            ? 'text-4xl mb-1'
-            : 'text-3xl mb-1';
-    return `<div class="${textClasses}" style="filter: drop-shadow(0 0 6px ${hex})">${icon}</div>`;
+            ? 'w-11 h-11'
+            : 'w-11 h-11 md:w-12 md:h-12';
+
+    return `
+        ${isGod ? '<div class="god-particles-layer"></div>' : ''}
+        ${showCornerBadge ? `<div class="item-tier-badge ${badgeClass}" style="border-color: ${isGod ? '#fff' : t === 1 ? '#facc15' : hex}88">${romanBadge}</div>` : ''}
+        <img src="${imgUrl}" 
+             alt="${item?.name || slot}" 
+             onerror="handleCustomImageError(this, '${slot}', '${hex}', ${isGod})"
+             class="${sizeClasses} object-contain relative z-10 transition-transform duration-200" 
+             style="filter: ${auraStrength}">
+        ${getTierRefinementHTML(item, sizeContext)}
+    `;
 }
 
 function resolveCharacterAvatarUrl() {
@@ -420,7 +539,6 @@ function rollXpForDifficulty(diff) {
  * ==========================================
  */
 const DAILY_HABITS_POOL = [
-    // Saúde & Hidratação
     { code: 'dh1',  text: 'Beber pelo menos 2 litros de água ao longo do dia', diff: 'Fácil' },
     { code: 'dh2',  text: 'Tomar 1 copo grande de água logo após acordar', diff: 'Fácil' },
     { code: 'dh3',  text: 'Consumir pelo menos 2 porções de frutas ou verduras hoje', diff: 'Fácil' },
@@ -429,24 +547,18 @@ const DAILY_HABITS_POOL = [
     { code: 'dh6',  text: 'Evitar comer alimentos pesados pelo menos 2 horas antes de dormir', diff: 'Médio' },
     { code: 'dh7',  text: 'Expor-se à luz natural do sol por pelo menos 10 minutos', diff: 'Fácil' },
     { code: 'dh8',  text: 'Fazer higiene bucal completa (incluindo fio dental) após as refeições', diff: 'Fácil' },
-
-    // Movimento & Corpo
     { code: 'dh9',  text: 'Fazer 10 a 15 minutos de alongamento físico e mobilidade', diff: 'Fácil' },
     { code: 'dh10', text: 'Realizar 30 minutos de caminhada ou atividade física', diff: 'Médio' },
     { code: 'dh11', text: 'Fazer uma série rápida de ativação física (polichinelos, agachamentos ou flexões)', diff: 'Médio' },
     { code: 'dh12', text: 'Cuidar da postura corporal e levantar para se esticar a cada hora sentado', diff: 'Fácil' },
     { code: 'dh13', text: 'Optar por caminhar mais ou usar escadas sempre que possível hoje', diff: 'Fácil' },
     { code: 'dh14', text: 'Dedicar 15 minutos para relaxar a musculatura do pescoço, ombros e costas', diff: 'Fácil' },
-
-    // Ordem & Ambiente
     { code: 'dh15', text: 'Arrumar a cama logo após acordar', diff: 'Fácil' },
     { code: 'dh16', text: 'Organizar o próprio espaço ou mesa antes de iniciar as atividades do dia', diff: 'Fácil' },
     { code: 'dh17', text: 'Não deixar louça ou copos sujos acumulados ao final do dia', diff: 'Fácil' },
     { code: 'dh18', text: 'Dedicar 10 minutos para guardar objetos fora do lugar no quarto ou na casa', diff: 'Fácil' },
     { code: 'dh19', text: 'Separar a roupa e os itens que vai precisar para o dia seguinte', diff: 'Fácil' },
     { code: 'dh20', text: 'Eliminar 3 itens inúteis (lixo, papéis antigos ou embalagens vazias) do ambiente', diff: 'Fácil' },
-
-    // Foco, Produtividade & Rotina
     { code: 'dh21', text: 'Definir as 3 tarefas mais importantes do dia e concluir pelo menos a primeira', diff: 'Médio' },
     { code: 'dh22', text: 'Realizar 30 minutos de foco total em uma tarefa importante sem olhar o celular', diff: 'Médio' },
     { code: 'dh23', text: 'Resolver uma pequena pendência que você estava adiando há dias', diff: 'Médio' },
@@ -456,8 +568,6 @@ const DAILY_HABITS_POOL = [
     { code: 'dh27', text: 'Levantar da cama no primeiro toque do despertador (sem usar o botão soneca)', diff: 'Difícil' },
     { code: 'dh28', text: 'Anotar os compromissos ou prioridades de amanhã antes de encerrar o dia', diff: 'Fácil' },
     { code: 'dh29', text: 'Passar pelo menos 1 hora com as notificações de redes sociais silenciadas', diff: 'Médio' },
-
-    // Mente, Conhecimento & Desenvolvimento
     { code: 'dh30', text: 'Ler pelo menos 5 a 10 páginas de qualquer livro ou leitura construtiva', diff: 'Médio' },
     { code: 'dh31', text: 'Dedicar 20 minutos para aprender algo novo (curso, vídeo educativo, idioma ou leitura)', diff: 'Médio' },
     { code: 'dh32', text: 'Praticar 5 a 10 minutos de respiração profunda ou silêncio mental', diff: 'Fácil' },
@@ -465,13 +575,9 @@ const DAILY_HABITS_POOL = [
     { code: 'dh34', text: 'Passar o dia mantendo a calma e evitando reclamar de pequenos imprevistos', diff: 'Difícil' },
     { code: 'dh35', text: 'Ouvir um conteúdo construtivo, educativo ou música relaxante durante o dia', diff: 'Fácil' },
     { code: 'dh36', text: 'Fazer uma pausa consciente de 10 minutos longe de telas para descansar a vista', diff: 'Fácil' },
-
-    // Finanças & Consciência
     { code: 'dh37', text: 'Conferir os gastos realizados nas últimas 24h para manter controle financeiro', diff: 'Fácil' },
     { code: 'dh38', text: 'Passar o dia inteiro com zero compras por impulso ou gastos desnecessários', diff: 'Médio' },
     { code: 'dh39', text: 'Preparar as próprias refeições ou lanches em casa hoje em vez de pedir delivery', diff: 'Médio' },
-
-    // Social, Bem-Estar & Autocuidado
     { code: 'dh40', text: 'Enviar uma mensagem atenciosa ou conversar com um amigo ou familiar', diff: 'Fácil' },
     { code: 'dh41', text: 'Fazer um elogio sincero ou gesto de gentileza para alguém hoje', diff: 'Fácil' },
     { code: 'dh42', text: 'Dedicar 15 minutos exclusivos ao autocuidado (pele, cabelo, banho relaxante ou aparência)', diff: 'Fácil' },
@@ -481,30 +587,23 @@ const DAILY_HABITS_POOL = [
 ];
 
 const WEEKLY_HABITS_POOL = [
-    // Saúde & Movimento Semanal
     { code: 'wh1',  text: 'Realizar pelo menos 3 sessões de exercício físico ou caminhada nesta semana', diff: 'Difícil' },
     { code: 'wh2',  text: 'Dormir pelo menos 7 horas por noite em 5 dias desta semana', diff: 'Difícil' },
     { code: 'wh3',  text: 'Passar pelo menos 4 dias da semana sem consumir delivery ou fast-food', diff: 'Difícil' },
     { code: 'wh4',  text: 'Atingir a meta de beber 2 litros de água em pelo menos 5 dias da semana', diff: 'Médio' },
     { code: 'wh5',  text: 'Fazer uma atividade ao ar livre (parque, caminhada longa ou esporte) na semana', diff: 'Médio' },
     { code: 'wh6',  text: 'Ficar 3 dias da semana sem consumir doces ou bebidas açucaradas', diff: 'Difícil' },
-
-    // Casa & Organização Semanal
     { code: 'wh7',  text: 'Realizar uma limpeza e organização geral no quarto ou ambiente principal', diff: 'Médio' },
     { code: 'wh8',  text: 'Trocar a roupa de cama e as toalhas de banho da semana', diff: 'Fácil' },
     { code: 'wh9',  text: 'Lavar, secar e guardar todas as roupas acumuladas', diff: 'Médio' },
     { code: 'wh10', text: 'Organizar uma gaveta, armário ou prateleira que esteja bagunçada', diff: 'Fácil' },
     { code: 'wh11', text: 'Limpar e higienizar os aparelhos de uso diário (celular, teclado, mesa ou fones)', diff: 'Fácil' },
     { code: 'wh12', text: 'Verificar alimentos na geladeira/armário e planejar as refeições da semana', diff: 'Médio' },
-
-    // Planejamento & Finanças Semanais
     { code: 'wh13', text: 'Revisar os gastos da semana e atualizar seu controle financeiro', diff: 'Médio' },
     { code: 'wh14', text: 'Planejar a agenda, compromissos e 3 metas principais para a próxima semana', diff: 'Fácil' },
     { code: 'wh15', text: 'Limpar arquivos desnecessários, fotos repetidas ou downloads no celular/PC', diff: 'Fácil' },
     { code: 'wh16', text: 'Resolver a pendência mais chata da sua semana sem deixar para a próxima', diff: 'Difícil' },
     { code: 'wh17', text: 'Verificar contas, boletos ou assinaturas do mês para evitar juros ou esquecimentos', diff: 'Fácil' },
-
-    // Evolução Pessoal, Mente & Relações
     { code: 'wh18', text: 'Acumular pelo menos 2 horas de estudo ou aprendizado de uma habilidade na semana', diff: 'Difícil' },
     { code: 'wh19', text: 'Finalizar a leitura de um capítulo inteiro de livro ou artigo aprofundado', diff: 'Médio' },
     { code: 'wh20', text: 'Dedicar um momento de qualidade presencial e sem celular com família, parceiro(a) ou amigos', diff: 'Fácil' },
@@ -910,7 +1009,8 @@ function openPenaltyModalUI(detailsArray = null) {
     const detailsEl = document.getElementById('penalty-modal-details');
 
     if (CONFIG_IMAGENS.fundoPenalidade) {
-        box.style.backgroundImage = `linear-gradient(180deg, rgba(10, 20, 24, 0.88) 0%, rgba(5, 10, 14, 0.94) 100%), url("${CONFIG_IMAGENS.fundoPenalidade}")`;
+        // Suporta tanto img/fundo_penalidade.png quanto ./fundo_penalidade.png na raiz
+        box.style.backgroundImage = `linear-gradient(180deg, rgba(10, 20, 24, 0.84) 0%, rgba(5, 10, 14, 0.92) 100%), url("${CONFIG_IMAGENS.fundoPenalidade}"), url("fundo_penalidade.png")`;
         box.style.backgroundSize = 'cover';
         box.style.backgroundPosition = 'center';
     }
@@ -1082,14 +1182,12 @@ async function applyDailyPenalty() {
     if (!currentUser && !isSandboxMode) return;
     const penaltiesApplied = [];
 
-    // 1. Quebra da Ofensiva Diária (Streak Reset)
     if (player.streak > 0) {
         penaltiesApplied.push(`• Ofensiva Quebrada: Sua sequência de 🔥 ${player.streak} dias foi zerada!`);
     }
     player.streak = 0;
     resetTimestamps.streak_count = 0;
 
-    // 2. Dreno de 35% de XP ou Queda de Nível
     const xpLoss = Math.floor(player.xp * 0.35);
     if (player.xp > 0 && xpLoss > 0) {
         player.xp = Math.max(0, player.xp - xpLoss);
@@ -1103,7 +1201,6 @@ async function applyDailyPenalty() {
         penaltiesApplied.push(`• EXP reduzido a 0.`);
     }
 
-    // 3. Injeção da Missão de Sobrevivência (Penalidade) sem repetir as já ativas
     const existingPenaltyTexts = periodicQuests.daily.list
         .filter(t => t.isPenalty && !t.done)
         .map(t => normalizeStr(t.text));
@@ -1144,7 +1241,6 @@ async function applyDailyPenalty() {
         }
     }
 
-    // 4. Sincroniza o bloqueio de categorias (1 categoria trancada por penalidade ativa)
     syncLockedCategoriesWithActivePenalties();
     const lockedNames = getLockedCategoriesTitlesText();
 
@@ -1244,7 +1340,6 @@ async function ensurePlayerProfile(preferredUsername = null) {
 }
 
 async function syncAllFromSupabase(isSilent = false) {
-    // No Modo Sandbox, bloqueia sincronizações externas para não sobrescrever os testes locais
     if (isSandboxMode) {
         setSyncStatus('sandbox');
         return;
@@ -1308,7 +1403,6 @@ async function syncAllFromSupabase(isSilent = false) {
 
         await checkPeriodicResets(new Date());
 
-        // Auto-limpeza e ajuste para a cota de 3 Daily Quests (mantendo as já concluídas hoje prioritariamente)
         const todayStr = new Date().toDateString();
         const currentNonPenDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
         const todayDailies = currentNonPenDailies.filter(t => t.created_at && new Date(t.created_at).toDateString() === todayStr);
@@ -1327,12 +1421,10 @@ async function syncAllFromSupabase(isSilent = false) {
         if (await topUpPeriodicQuests('daily')) needsSave = true;
         if (await topUpPeriodicQuests('weekly')) needsSave = true;
 
-        // Sincroniza a quantidade de categorias bloqueadas com o número de penalidades ativas
         if (syncLockedCategoriesWithActivePenalties()) {
             needsSave = true;
         }
 
-        // Se o jogador já cumpriu todas as Dailies e Penalidades hoje, garante o registro de Streak
         const nonPenDailies = periodicQuests.daily.list.filter(t => !t.isPenalty);
         if (nonPenDailies.length >= DAILY_QUOTA && periodicQuests.daily.list.every(t => t.done) && resetTimestamps.last_streak_date !== todayStr) {
             player.streak = Math.max(1, (player.streak || 0) + 1);
@@ -1384,7 +1476,6 @@ async function savePlayerToSupabase() {
     player.power = totalPower;
     resetTimestamps.streak_count = player.streak;
 
-    // TRAVA CRÍTICA DO SANDBOX: Nunca envia dados de teste para o Supabase
     if (isSandboxMode) {
         console.info('%c[SANDBOX OFF-DB] Alteração simulada localmente (não enviada ao Supabase).', 'color:#c084fc;font-weight:bold;');
         setSyncStatus('sandbox');
@@ -1623,7 +1714,7 @@ function jumpToCategory(catKey) {
 
 /**
  * ==========================================
- * SISTEMA DE LOOT & ROLETA CS:GO (COM SOM FÍSICO)
+ * SISTEMA DE LOOT & ROLETA CS:GO (COM SOM FÍSICO & TIER VISUAL)
  * ==========================================
  */
 const equipSlots = ['capacete', 'peitoral', 'botas', 'capa', 'arma_principal', 'arma_secundaria'];
@@ -1701,7 +1792,7 @@ function checkLootboxTriggers(completedListType, completedCategoryId = null) {
     }
 }
 
-function initiateLootbox(boxType, customName = null, forcedRarityId = null, forcedSlot = null) {
+function initiateLootbox(boxType, customName = null, forcedRarityId = null, forcedSlot = null, forcedTier = null) {
     const modal = document.getElementById('lootbox-modal');
     const phase1 = document.getElementById('lootbox-phase-1');
     const phaseRoulette = document.getElementById('lootbox-phase-roulette');
@@ -1710,7 +1801,7 @@ function initiateLootbox(boxType, customName = null, forcedRarityId = null, forc
     
     try {
         currentLootBoxType = boxType;
-        currentLootItem = generateLoot(boxType, forcedRarityId, forcedSlot);
+        currentLootItem = generateLoot(boxType, forcedRarityId, forcedSlot, forcedTier);
         isRouletteSpinning = false;
         
         const boxName = customName ? `${customName} Box` : `${boxType.toUpperCase()} Box`;
@@ -1747,12 +1838,17 @@ function openLootbox() {
     for (let i = 0; i < TOTAL_CARDS; i++) {
         const item = (i === WINNING_INDEX) ? currentLootItem : generateLoot(currentLootBoxType);
         const card = document.createElement('div');
-        card.className = `roulette-card border-2 ${item.rarity.borderClass}`;
-        card.style.boxShadow = `inset 0 0 12px ${item.rarity.hex}33`;
+        const isMasterpiece = item.rarity.isGod || item.tier === 1;
+        card.className = `roulette-card item-tier-surface border-2 ${item.rarity.borderClass} ${isMasterpiece ? 'tier-masterpiece-frame' : ''}`;
+        card.style.cssText = getSlotSurfaceInlineStyle(item);
         card.innerHTML = `
-            ${renderEquipmentVisualHTML(item, 'roulette')}
-            <div class="text-[10px] font-bold uppercase ${item.rarity.colorClass} truncate w-full text-center">${item.rarity.name}</div>
-            <div class="text-[9px] text-gray-400 uppercase truncate w-full text-center">${item.slotName}</div>
+            <div class="w-full flex flex-col items-center justify-center pt-1 relative">
+                ${renderEquipmentVisualHTML(item, 'roulette')}
+            </div>
+            <div class="w-full text-center relative z-10">
+                <div class="text-[10px] font-bold uppercase ${item.rarity.colorClass} truncate w-full">${item.rarity.name}</div>
+                <div class="text-[9px] text-gray-400 uppercase truncate w-full">${item.slotName}</div>
+            </div>
         `;
         track.appendChild(card);
     }
@@ -1820,11 +1916,15 @@ function revealFinalLootItem() {
         const statsEl = document.getElementById('loot-stats');
         const actionMsg = document.getElementById('loot-action-msg');
         
+        iconEl.className = `w-36 h-36 rounded-lg border-2 ${item.rarity.borderClass} item-tier-surface flex flex-col items-center justify-center mb-4 loot-reveal relative overflow-hidden`;
+        iconEl.style.cssText = getSlotSurfaceInlineStyle(item);
         iconEl.innerHTML = renderEquipmentVisualHTML(item, 'modal');
-        rarityEl.innerText = item.rarity.name;
+
+        const roman = getTierRomanLabel(item);
+        rarityEl.innerText = item.rarity.isGod ? `${item.rarity.name} [GOD TIER]` : `${item.rarity.name} • Tier ${roman} (T${item.tier})`;
         rarityEl.className = `text-xs uppercase tracking-widest font-bold mb-1 ${item.rarity.colorClass}`;
         
-        const tierText = item.rarity.isGod ? "" : ` - Tier ${item.tier}`;
+        const tierText = item.rarity.isGod ? "" : ` [${roman}]`;
         nameEl.innerText = `${item.rarity.name} ${item.slotName}${tierText}`;
         nameEl.className = `text-2xl md:text-3xl font-bold uppercase tracking-wider mb-2 loot-reveal ${item.rarity.colorClass}`;
         statsEl.innerText = `Power: +${item.power.toLocaleString()}`;
@@ -1861,7 +1961,7 @@ function closeLootbox() {
     if (player.xp >= player.maxXp) processLevelUp();
 }
 
-function generateLoot(boxType, forcedRarityId = null, forcedSlot = null) {
+function generateLoot(boxType, forcedRarityId = null, forcedSlot = null, forcedTier = null) {
     let rarity = null;
     if (forcedRarityId) {
         rarity = rarities.find(r => r.id === normalizeStr(forcedRarityId)) || null;
@@ -1887,8 +1987,12 @@ function generateLoot(boxType, forcedRarityId = null, forcedSlot = null) {
     let power = rarity.basePower;
     
     if (!rarity.isGod) {
-        const tierRand = Math.random();
-        tier = Math.floor(Math.pow(tierRand, 2) * 11) + 1; 
+        if (forcedTier && forcedTier >= 1 && forcedTier <= 11) {
+            tier = parseInt(forcedTier, 10);
+        } else {
+            const tierRand = Math.random();
+            tier = Math.floor(Math.pow(tierRand, 2) * 11) + 1;
+        }
         power += (13 - tier) * Math.floor(rarity.basePower * 0.1);
     } else {
         power += Math.floor(Math.random() * (rarity.basePower * 0.5));
@@ -2027,7 +2131,6 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
 
     if (!task || task.done || !isDone || !task.aprovada) return;
 
-    // Bloqueio das Daily Quests enquanto houver qualquer Penalidade ativa
     if (listType === 'daily' && !task.isPenalty && hasActivePenaltyQuests()) {
         SoundFX.error();
         showSystemNotification('⚠️ Daily Quests bloqueadas! Conclua todas as missões de [PENALIDADE] primeiro!', 'error');
@@ -2035,7 +2138,6 @@ async function handleTaskToggle(taskId, isDone, xp, listType, categoryId = null)
         return;
     }
 
-    // Bloqueio de categorias trancadas por penalidade
     if (listType === 'category' && categoryId && isCategoryLocked(categoryId)) {
         SoundFX.error();
         showSystemNotification('⚠️ Esta categoria está bloqueada por penalidade!', 'error');
@@ -2479,6 +2581,11 @@ async function renderLeaderboard() {
     }
 }
 
+/**
+ * ==========================================
+ * RENDERIZADOR DO INVENTÁRIO (COM MOLDURA ALBION + TAG ROMANA + REFINAMENTO)
+ * ==========================================
+ */
 function renderInventory() {
     const charContainer = document.getElementById('character-avatar-container');
     const avatarUrl = resolveCharacterAvatarUrl();
@@ -2498,21 +2605,24 @@ function renderInventory() {
         const defaultSlotImg = CONFIG_IMAGENS.equipamentosPadrao?.[slot] || "";
 
         if (eq) {
-            const tierTxt = eq.rarity.isGod ? '' : `T${eq.tier}`;
+            const isMasterpiece = eq.rarity.isGod || eq.tier === 1;
+            const romanTxt = getTierRomanLabel(eq);
             slotEl.innerHTML = `
                 ${renderEquipmentVisualHTML(eq, 'slot')}
-                <div class="text-[10px] font-bold uppercase ${eq.rarity.colorClass} truncate w-full text-center px-1">${eq.rarity.name} ${tierTxt}</div>
+                <div class="text-[9px] font-bold uppercase ${eq.rarity.colorClass} truncate w-full text-center px-1 relative z-10">${eq.rarity.name}</div>
             `;
-            slotEl.className = `equip-slot filled w-20 h-20 md:w-24 md:h-24 rounded flex flex-col items-center justify-center cursor-help border-2 ${eq.rarity.borderClass}`;
-            slotEl.title = `${eq.name}\nPoder: +${eq.power.toLocaleString()}\nRaridade: ${eq.rarity.name}`;
+            slotEl.className = `equip-slot filled item-tier-surface w-20 h-20 md:w-24 md:h-24 rounded flex flex-col items-center justify-end pb-1 cursor-help border-2 ${eq.rarity.borderClass} ${isMasterpiece ? 'tier-masterpiece-frame' : ''}`;
+            slotEl.style.cssText = getSlotSurfaceInlineStyle(eq);
+            slotEl.title = `${eq.name} [${romanTxt}]\nPoder: +${eq.power.toLocaleString()} PWR\nRaridade: ${eq.rarity.name}${eq.tier ? ` (Tier ${eq.tier})` : ' (God Tier)'}`;
         } else {
             const visualElement = defaultSlotImg 
-                ? `<img src="${defaultSlotImg}" alt="${slot}" class="w-12 h-12 md:w-14 md:h-14 object-contain opacity-30 grayscale">` 
+                ? `<img src="${defaultSlotImg}" alt="${slot}" onerror="handleCustomImageError(this, '${slot}', '#4a5568', false)" class="w-12 h-12 md:w-14 md:h-14 object-contain opacity-30 grayscale">` 
                 : `<span class="text-gray-600 opacity-30 text-2xl">${slotIcons[slot]}</span>`;
 
             slotEl.innerHTML = visualElement;
             slotEl.className = `equip-slot w-20 h-20 md:w-24 md:h-24 rounded flex flex-col items-center justify-center cursor-help`;
-            slotEl.title = "Slot Vazio";
+            slotEl.style.cssText = '';
+            slotEl.title = `Slot Vazio (${slot.replace('_', ' ')})`;
         }
     });
 }
@@ -2521,8 +2631,6 @@ function renderInventory() {
  * ==========================================
  * AMBIENTE DE TESTES / SANDBOX (SPRINT 2)
  * ==========================================
- * Permite testar qualquer função visual/sonora no Painel ou via Console (F12: SysTest)
- * garantindo que NENHUMA alteração vá para o banco de dados Supabase.
  */
 function enterSandboxMode() {
     if (!isSandboxMode) {
@@ -2581,30 +2689,31 @@ const SysTest = {
     help() {
         console.log('%c🧪 LIFE OS — CONSOLE DE TESTES (SANDBOX OFF-DB)', 'background:#00d4ff;color:#000;font-weight:bold;padding:4px 8px;border-radius:4px;');
         console.table([
-            { Comando: "SysTest.loot('break')", Descricao: "Abre a Roleta CS:GO forçando a raridade (comum, incomum, raro, epico, lendario, mitico, exotico, divino, hack, break)" },
-            { Comando: "SysTest.equipSet('divino')", Descricao: "Equipa os 6 slots com uma raridade e abre o Inventário para ver as novas artes SVG" },
-            { Comando: "SysTest.levelUp(50, 'trabalho')", Descricao: "Simula salto para o Nível X e testa evolução de Classe (ou 'balanced' para Classes Secretas)" },
-            { Comando: "SysTest.streak(30)", Descricao: "Testa o visual e o som da Ofensiva Diária para X dias seguidos (ex: 7, 14, 30, 100)" },
+            { Comando: "SysTest.loot('lendario', null, 1)", Descricao: "Abre a Roleta CS:GO forçando Raridade e Tier (ex: Tier 1 Obra-Prima)" },
+            { Comando: "SysTest.equipSet('raro', 1)", Descricao: "Equipa os 6 slots com uma Raridade e Tier (1 a 11) e abre o Inventário" },
+            { Comando: "SysTest.levelUp(50, 'trabalho')", Descricao: "Simula salto para o Nível X e testa evolução de Classe (ou 'balanced')" },
+            { Comando: "SysTest.streak(30)", Descricao: "Testa o visual e o som da Ofensiva Diária para X dias seguidos" },
             { Comando: "SysTest.penalty(3)", Descricao: "Simula X missões de penalidade ativas trancando X categorias e as Daily Quests" },
-            { Comando: "SysTest.rank('Monarca')", Descricao: "Testa o Avatar do Caçador em qualquer Rank (E, D, C, B, A, S, Nacional, Global, Monarca)" },
-            { Comando: "SysTest.sound('classEvolution')", Descricao: "Toca qualquer efeito sonoro (boot, notifyPing, questComplete, streakUp, equip, lootGod, levelUp, classEvolution, penaltyAlarm)" },
+            { Comando: "SysTest.rank('Monarca')", Descricao: "Testa o Avatar do Caçador em qualquer Rank (E até Monarca)" },
             { Comando: "SysTest.exit()", Descricao: "Sai do Sandbox e restaura 100% os dados reais do Supabase" }
         ]);
         return "Digite qualquer comando acima. Nada será salvo no banco!";
     },
 
-    loot(rarityId = 'lendario', slot = null) {
+    loot(rarityId = 'lendario', slot = null, tier = null) {
         enterSandboxMode();
         const rId = normalizeStr(rarityId);
-        showSystemNotification(`🧪 [SANDBOX] Testando Roleta CS:GO (Raridade: ${rId.toUpperCase()})`, 'success');
-        initiateLootbox('daily', `Sandbox (${rId.toUpperCase()})`, rId, slot);
+        const parsedTier = tier ? parseInt(tier, 10) : null;
+        showSystemNotification(`🧪 [SANDBOX] Testando Roleta CS:GO (${rId.toUpperCase()}${parsedTier ? ' T' + parsedTier : ''})`, 'success');
+        initiateLootbox('daily', `Sandbox (${rId.toUpperCase()})`, rId, slot, parsedTier);
     },
 
-    equipSet(rarityId = 'divino') {
+    equipSet(rarityId = 'divino', tier = 1) {
         enterSandboxMode();
         const rId = normalizeStr(rarityId);
+        const parsedTier = tier ? parseInt(tier, 10) : 1;
         equipSlots.forEach(slot => {
-            player.equipment[slot] = generateLoot('yearly', rId, slot);
+            player.equipment[slot] = generateLoot('yearly', rId, slot, parsedTier);
         });
         SoundFX.equip();
         recalcPower();
@@ -2612,7 +2721,7 @@ const SysTest = {
         activeCategoryId = 'inventario';
         renderTabs();
         renderCategory('inventario');
-        showSystemNotification(`🧪 [SANDBOX] Set completo [${rId.toUpperCase()}] equipado localmente!`, 'success');
+        showSystemNotification(`🧪 [SANDBOX] Set [${rId.toUpperCase()} - Tier ${parsedTier}] equipado localmente!`, 'success');
     },
 
     levelUp(targetLevel = null, focusCategory = 'trabalho') {
@@ -2764,7 +2873,7 @@ function renderAdminPanel() {
                 </div>
             </div>
 
-            <!-- 2. Terminal do Arquiteto (Exclusivo para is_admin = true no Supabase) -->
+            <!-- 2. Terminal do Arquiteto -->
             ${player.isAdmin ? `
                 <div class="bg-black bg-opacity-60 p-4 rounded border border-purple-500 shadow-[0_0_15px_rgba(179,136,255,0.2)]">
                     <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3">
@@ -2793,7 +2902,7 @@ function renderAdminPanel() {
                             ${isSandboxMode ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-900 text-purple-200 border border-purple-400 blink">SANDBOX ATIVO (OFF-DB)</span>' : '<span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700">100% Seguro (Não salva no Supabase)</span>'}
                         </h3>
                         <p class="text-xs text-gray-400 mt-0.5">
-                            Qualquer botão abaixo ativa o isolamento local (ou use <code class="text-purple-300">SysTest.help()</code> no Console F12).
+                            Inspecione suas novas imagens, Tiers (<code class="text-yellow-300">XI</code> a <code class="text-yellow-300">I</code>) e estrelas de refinamento sem afetar o banco.
                         </p>
                     </div>
                     ${isSandboxMode ? `
@@ -2803,21 +2912,28 @@ function renderAdminPanel() {
                     ` : ''}
                 </div>
 
-                <!-- 3.1 Teste de Roleta CS:GO e Sets de Equipamento -->
+                <!-- 3.1 Teste de Roleta CS:GO, Raridades e Tiers (T11 a T1) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="p-3 rounded bg-black/60 border border-gray-800 space-y-2">
-                        <div class="text-xs font-bold text-yellow-400 uppercase tracking-wider">🎰 1. Testar Roleta CS:GO (Forçar Raridade)</div>
+                        <div class="text-xs font-bold text-yellow-400 uppercase tracking-wider">🎰 1. Testar Imagens, Raridade & Tier (XI a I)</div>
                         <div class="flex gap-2">
                             <select id="sandbox-loot-rarity" class="flex-grow bg-black border border-gray-700 rounded px-2 py-1.5 text-xs text-white">
-                                ${rarities.map(r => `<option value="${r.id}">${r.name} (+${r.basePower} PWR base)</option>`).join('')}
+                                ${rarities.map(r => `<option value="${r.id}">${r.name} (+${r.basePower} PWR)</option>`).join('')}
                             </select>
-                            <button onclick="SysTest.loot(document.getElementById('sandbox-loot-rarity').value)" class="px-3 py-1.5 border border-yellow-500 text-yellow-300 hover:bg-yellow-950 rounded text-xs font-bold uppercase">
-                                Girar Roleta
-                            </button>
+                            <select id="sandbox-loot-tier" class="w-28 bg-black border border-gray-700 rounded px-2 py-1.5 text-xs text-yellow-300 font-bold">
+                                <option value="1">Tier I (T1 ★)</option>
+                                <option value="2">Tier II (T2)</option>
+                                <option value="4">Tier IV (T4)</option>
+                                <option value="7">Tier VII (T7)</option>
+                                <option value="11">Tier XI (T11)</option>
+                            </select>
                         </div>
-                        <div class="flex flex-wrap gap-1.5 pt-1">
-                            <button onclick="SysTest.equipSet(document.getElementById('sandbox-loot-rarity').value)" class="flex-1 px-2 py-1 bg-blue-950/60 hover:bg-blue-900 border border-blue-600 text-blue-200 rounded text-[11px] font-bold uppercase">
-                                🛡️ Equipar Set Completo (Ver no Inventário)
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="SysTest.loot(document.getElementById('sandbox-loot-rarity').value, null, document.getElementById('sandbox-loot-tier').value)" class="flex-1 px-2 py-1.5 border border-yellow-500 text-yellow-300 hover:bg-yellow-950 rounded text-[11px] font-bold uppercase">
+                                🎰 Girar na Roleta
+                            </button>
+                            <button onclick="SysTest.equipSet(document.getElementById('sandbox-loot-rarity').value, document.getElementById('sandbox-loot-tier').value)" class="flex-1 px-2 py-1.5 bg-blue-950/60 hover:bg-blue-900 border border-blue-500 text-blue-200 rounded text-[11px] font-bold uppercase">
+                                🛡️ Equipar Set no Inventário
                             </button>
                         </div>
                     </div>
@@ -2855,7 +2971,7 @@ function renderAdminPanel() {
                         </div>
                         <div class="flex flex-wrap gap-1.5 pt-1">
                             <button onclick="SysTest.penalty(1)" class="flex-1 px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-600 text-red-200 rounded text-[11px] font-bold uppercase">
-                                💀 +1 Penalidade (Trancar 1 Cat + Dailies)
+                                💀 +1 Penalidade (Ver fundo_penalidade)
                             </button>
                             <button onclick="SysTest.penalty(3)" class="flex-1 px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-500 text-red-100 rounded text-[11px] font-bold uppercase">
                                 💀 +3 Penalidades
